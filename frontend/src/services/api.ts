@@ -96,7 +96,7 @@ export interface SearchHit {
   score: number;
 }
 
-const BASE = "";
+const BASE = "https://bis-sahayak-jbim.onrender.com";
 
 export class ApiError extends Error {
   status: number;
