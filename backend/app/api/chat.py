@@ -21,6 +21,8 @@ from app.rag.llm import (
     ensure_citations,
     get_llm_provider,
 )
+from app.knowledge.registry import normalize_category, related_questions_for
+from app.rag.query_understanding import understand_query
 from app.rag.retrieval import RetrievalService, build_history, build_prompt
 from app.rag.vector_store import RetrievedChunk
 from app.schemas.chat import ChatRequest, ChatResponse, CitationSchema
@@ -72,6 +74,7 @@ def _hybridize(
     answer: str,
     chunks: list[RetrievedChunk],
     force_general: bool = False,
+    bis_question: bool | None = None,
 ) -> tuple[str, list[RetrievedChunk]]:
     """Hybrid post-processing shared by /chat and /chat/stream.
 
@@ -84,8 +87,13 @@ def _hybridize(
     force_general marks answers where the model itself signalled MODE B (the
     [GENERAL ANSWER] marker was present) even though the question classified
     as BIS — e.g. the indexed context turned out to be unrelated.
+    bis_question lets the caller override the built-in classifier with the
+    richer query-understanding result (categories like hallmarking are BIS
+    topics even when the old keyword list misses them).
     """
-    if not force_general and detect_answer_mode(question) != "general":
+    if bis_question is None:
+        bis_question = detect_answer_mode(question) != "general"
+    if not force_general and bis_question:
         # MODE A: grounded answer — guarantee citation markers, then resolve
         # the [n] markers to only the chunks actually cited.
         answer = ensure_citations(answer, len(chunks))
@@ -103,7 +111,7 @@ def chat(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
 ):
-    """Grounded RAG chat: retrieve → rerank → LLM → answer + citations."""
+    """Grounded RAG chat: understand → retrieve → rerank → LLM → answer + citations."""
     try:
         # 1) Get or create conversation
         if payload.conversation_id:
@@ -126,14 +134,24 @@ def chat(
             [{"role": m.role, "content": m.content} for m in history_rows]
         )
 
-        # 3) Retrieval (query = raw user message; metadata filter = user's docs)
+        # 3) Query understanding (language, category, product, standard number)
+        u = understand_query(payload.message)
+        # explicit UI category selection overrides detection
+        explicit = normalize_category(payload.category) if payload.category else None
+
+        # 4) Retrieval (category-filtered / category-boosted)
         retrieval = RetrievalService()
-        chunks = retrieval.retrieve(db, payload.message)
+        chunks = retrieval.retrieve(
+            db,
+            payload.message,
+            categories=[explicit] if explicit else None,
+            understanding=u,
+        )
 
-        # 4) Grounded prompt
-        prompt = build_prompt(payload.message, payload.mode, history, chunks)
+        # 5) Grounded prompt (mode + language + category notes)
+        prompt = build_prompt(payload.message, payload.mode, history, chunks, understanding=u)
 
-        # 5) LLM
+        # 6) LLM
         provider = get_llm_provider()
         try:
             answer = provider.generate(prompt, history=history)
@@ -143,19 +161,40 @@ def chat(
                 status.HTTP_502_BAD_GATEWAY,
                 "The AI service is temporarily unavailable. Please try again shortly.",
             ) from exc
-        # 6) Hybrid post-processing: grounded vs general answers + citations
+        # 7) Hybrid post-processing: grounded vs general answers + citations
         used_general = GENERAL_MARKER in answer
         answer, used = _hybridize(
-            payload.message, answer, chunks, force_general=used_general
+            payload.message,
+            answer,
+            chunks,
+            force_general=used_general,
+            bis_question=(u.category != "general_bis")
+            or detect_answer_mode(payload.message) == "bis",
         )
         citations = _citations(used)
 
-        # 7) Persist
+        # Related follow-up questions — ONLY from the detected category context
+        related = related_questions_for(explicit or u.category, None)
+        if u.product_name:
+            related = [
+                f"What should I check before buying {u.product_name.lower()}?",
+                *related,
+            ][:3]
+
+        # 8) Persist
         if not conversation.messages:
             conversation.title = _title_for(payload.message)
         user_msg, assistant_msg = _save_messages(
             db, conversation, payload.message, answer, citations
         )
+        assistant_msg.sources_json = {
+            **(assistant_msg.sources_json or {}),
+            "detected_category": u.category,
+            "category_label": u.category_label,
+            "related_questions": related,
+            "language": u.language,
+        }
+        db.commit()
 
         return ChatResponse(
             conversation_id=conversation.id,
@@ -164,6 +203,11 @@ def chat(
             sources=citations,
             mode=payload.mode,
             llm_provider=provider.name,
+            detected_category=u.category,
+            category_label=u.category_label,
+            category_confidence=round(u.category_confidence, 3),
+            language=u.language,
+            related_questions=related,
         )
     except HTTPException:
         raise
@@ -204,8 +248,15 @@ def stream_chat(
             [{"role": r[0], "content": r[1]} for r in history_rows]
         )
 
-        chunks = RetrievalService().retrieve(db, payload.message)
-        prompt = build_prompt(payload.message, payload.mode, history, chunks)
+        u = understand_query(payload.message)
+        explicit = normalize_category(payload.category) if payload.category else None
+        chunks = RetrievalService().retrieve(
+            db,
+            payload.message,
+            categories=[explicit] if explicit else None,
+            understanding=u,
+        )
+        prompt = build_prompt(payload.message, payload.mode, history, chunks, understanding=u)
 
         provider = get_llm_provider()
     except HTTPException:
@@ -222,6 +273,9 @@ def stream_chat(
                 "mode": payload.mode,
                 "llm_provider": provider.name,
                 "retrieved": len(chunks),
+                "detected_category": u.category,
+                "category_label": u.category_label,
+                "language": u.language,
             })
             marker_filter = _MarkerFilter(
                 provider.stream_generate(prompt, history=history)
@@ -241,18 +295,39 @@ def stream_chat(
                 answer,
                 chunks,
                 force_general=marker_filter.marker_seen,
+                bis_question=(u.category != "general_bis")
+                or detect_answer_mode(payload.message) == "bis",
             )
             citations = _citations(used)
+
+            related = related_questions_for(explicit or u.category, None)
+            if u.product_name:
+                related = [
+                    f"What should I check before buying {u.product_name.lower()}?",
+                    *related,
+                ][:3]
 
             if not conversation.messages:
                 conversation.title = _title_for(payload.message)
             user_msg, assistant_msg = _save_messages(
                 db, conversation, payload.message, answer, citations
             )
+            assistant_msg.sources_json = {
+                **(assistant_msg.sources_json or {}),
+                "detected_category": u.category,
+                "category_label": u.category_label,
+                "related_questions": related,
+                "language": u.language,
+            }
+            db.commit()
             yield sse("done", {
                 "conversation_id": conversation.id,
                 "message_id": assistant_msg.id,
                 "sources": [c.model_dump() for c in citations],
+                "detected_category": u.category,
+                "category_label": u.category_label,
+                "related_questions": related,
+                "language": u.language,
             })
         except Exception:  # noqa: BLE001
             logger.exception("Streaming failed mid-flight")

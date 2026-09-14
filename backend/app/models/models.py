@@ -78,12 +78,20 @@ class Document(Base):
     title: Mapped[str] = mapped_column(String(500), default="")
     year: Mapped[int | None] = mapped_column(Integer, nullable=True)
     document_type: Mapped[str] = mapped_column(String(50), default="standard")
-    category: Mapped[str] = mapped_column(String(100), default="general")
+    # canonical knowledge category key (food | hallmarking | electronics_electrical |
+    # everyday_products | general_bis | industry); legacy values are migrated.
+    category: Mapped[str] = mapped_column(String(100), default="general_bis", index=True)
+    subcategory: Mapped[str] = mapped_column(String(200), default="")
+    product_name: Mapped[str] = mapped_column(String(300), default="")
+    language: Mapped[str] = mapped_column(String(20), default="en")  # en | hi
     description: Mapped[str] = mapped_column(Text, default="")
     file_path: Mapped[str] = mapped_column(String(500), default="")
     file_size: Mapped[int] = mapped_column(Integer, default=0)
     page_count: Mapped[int] = mapped_column(Integer, default=0)
     source_url: Mapped[str] = mapped_column(String(500), default="")
+    source_name: Mapped[str] = mapped_column(String(300), default="")
+    # official_bis | government | official | demo — drives OFFICIAL vs DEMO badges
+    source_type: Mapped[str] = mapped_column(String(30), default="demo")
     # uploaded | processing | extracting | chunking | embedding | indexed | failed
     status: Mapped[str] = mapped_column(String(30), default="uploaded", index=True)
     error_message: Mapped[str] = mapped_column(Text, default="")
@@ -131,3 +139,72 @@ class Feedback(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
     message: Mapped["Message"] = relationship(back_populates="feedback")
+
+
+# ----------------------------------------------------------------------------
+# Knowledge-base structures (categories, products, sources, standard metadata)
+# ----------------------------------------------------------------------------
+class ProductCategory(Base):
+    """Configurable knowledge category (seeded from app.knowledge.registry)."""
+
+    __tablename__ = "product_categories"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    key: Mapped[str] = mapped_column(String(60), unique=True, index=True)
+    label: Mapped[str] = mapped_column(String(120))
+    emoji: Mapped[str] = mapped_column(String(10), default="")
+    description: Mapped[str] = mapped_column(Text, default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Product(Base):
+    """A consumer/industry product with its known BIS reference information."""
+
+    __tablename__ = "products"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    name: Mapped[str] = mapped_column(String(300), index=True)
+    category: Mapped[str] = mapped_column(String(60), index=True)
+    subcategory: Mapped[str] = mapped_column(String(200), default="")
+    standard_number: Mapped[str] = mapped_column(String(100), default="")
+    standard_title: Mapped[str] = mapped_column(String(500), default="")
+    # mandatory | voluntary | scheme-specific | info-not-available
+    certification_status: Mapped[str] = mapped_column(String(40), default="info-not-available")
+    scheme: Mapped[str] = mapped_column(String(30), default="")  # ISI | CRS | HALLMARK | ""
+    checklist_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    notes: Mapped[str] = mapped_column(Text, default="")
+    # registry | admin — registry rows are refreshed from the code registry
+    origin: Mapped[str] = mapped_column(String(20), default="registry")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), default=utcnow, onupdate=utcnow
+    )
+
+
+class KnowledgeSource(Base):
+    """Provenance record for where indexed documents came from."""
+
+    __tablename__ = "knowledge_sources"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    source_name: Mapped[str] = mapped_column(String(300), default="")
+    source_url: Mapped[str] = mapped_column(String(500), default="")
+    # official_bis | government | official | demo
+    source_type: Mapped[str] = mapped_column(String(30), default="demo", index=True)
+    document_date: Mapped[str] = mapped_column(String(60), default="")
+    document_type: Mapped[str] = mapped_column(String(50), default="")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class StandardMetadata(Base):
+    """Catalog of known standard numbers with their registry-backed metadata."""
+
+    __tablename__ = "standard_metadata"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    standard_number: Mapped[str] = mapped_column(String(100), unique=True, index=True)
+    title: Mapped[str] = mapped_column(String(500), default="")
+    category: Mapped[str] = mapped_column(String(60), default="general_bis")
+    product_name: Mapped[str] = mapped_column(String(300), default="")
+    status: Mapped[str] = mapped_column(String(30), default="active")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=utcnow)

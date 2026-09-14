@@ -14,11 +14,16 @@ class DocumentOut(BaseModel):
     year: int | None
     document_type: str
     category: str
+    subcategory: str = ""
+    product_name: str = ""
+    language: str = "en"
     description: str
     file_path: str
     file_size: int
     page_count: int
     source_url: str
+    source_name: str = ""
+    source_type: str = "demo"
     status: str
     error_message: str
     created_at: datetime
@@ -107,6 +112,8 @@ class SearchHit(BaseModel):
     section: str
     snippet: str
     score: float
+    category: str = ""
+    year: int | None = None
 
 
 class SemanticSearchResponse(BaseModel):

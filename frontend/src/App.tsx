@@ -10,6 +10,11 @@ import DocumentsPage from "./pages/Documents";
 import DocumentDetailPage from "./pages/DocumentDetail";
 import AdminPage from "./pages/Admin";
 import SettingsPage from "./pages/Settings";
+import {
+  CategoryCards,
+  CategoryProducts,
+  ProductDetailPage,
+} from "./pages/ExploreProducts";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -56,6 +61,36 @@ export default function App() {
             <RequireAuth>
               <Layout>
                 <DocumentsPage />
+              </Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/explore"
+          element={
+            <RequireAuth>
+              <Layout>
+                <CategoryCards />
+              </Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/explore/:categoryKey"
+          element={
+            <RequireAuth>
+              <Layout>
+                <CategoryProducts />
+              </Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/explore/product/:productId"
+          element={
+            <RequireAuth>
+              <Layout>
+                <ProductDetailPage />
               </Layout>
             </RequireAuth>
           }

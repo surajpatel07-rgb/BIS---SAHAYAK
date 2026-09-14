@@ -26,7 +26,11 @@ def _tokens(text: str) -> set[str]:
     return set(re.findall(r"[a-z0-9]+", text.lower())) - stop
 
 
-def score_chunk(query: str, chunk: RetrievedChunk) -> float:
+def score_chunk(
+    query: str,
+    chunk: RetrievedChunk,
+    category_boost: float = 0.0,
+) -> float:
     """Blend query-term coverage, phrase match, and metadata boosts."""
     q_tokens = _tokens(query)
     c_tokens = _tokens(chunk.chunk_text)
@@ -52,7 +56,7 @@ def score_chunk(query: str, chunk: RetrievedChunk) -> float:
     title_tokens = _tokens(chunk.title + " " + chunk.document_name)
     title_score = (len(q_tokens & title_tokens) / len(q_tokens)) * 0.1
 
-    return min(1.0, 0.55 * term_score + phrase + std_boost + title_score)
+    return min(1.0, 0.55 * term_score + phrase + std_boost + title_score + category_boost)
 
 
 def rerank(
@@ -60,6 +64,7 @@ def rerank(
     candidates: list[RetrievedChunk],
     top_n: int = 5,
     vector_weight: float = 0.35,
+    category_boost: float = 0.0,
 ) -> list[RetrievedChunk]:
     """Return the top_n candidates re-scored by the reranker.
 
@@ -67,7 +72,7 @@ def rerank(
     The blended score is written back into `relevance_score` for citations.
     """
     for c in candidates:
-        rr = score_chunk(query, c)
+        rr = score_chunk(query, c, category_boost=category_boost)
         c.score = vector_weight * c.score + (1 - vector_weight) * rr
     candidates.sort(key=lambda c: c.score, reverse=True)
     return candidates[:top_n]

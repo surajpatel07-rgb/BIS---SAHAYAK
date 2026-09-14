@@ -34,13 +34,20 @@ async def upload_document(
     title: str = Form(""),
     year: int | None = Form(None),
     document_type: str = Form("standard"),
-    category: str = Form("general"),
+    category: str = Form("general_bis"),
+    subcategory: str = Form(""),
+    product_name: str = Form(""),
+    language: str = Form("en"),
     description: str = Form(""),
     source_url: str = Form(""),
+    source_name: str = Form(""),
+    source_type: str = Form("demo"),
     db: Session = Depends(get_db),
     _admin: User = Depends(require_admin),
 ):
     """Upload a PDF and start the ingestion pipeline (extract→chunk→embed→index)."""
+    from app.knowledge.registry import normalize_category
+
     content = await file.read()
     try:
         validate_pdf(file.filename or "upload.pdf", content)
@@ -58,11 +65,16 @@ async def upload_document(
         title=title.strip() or (file.filename or "").rsplit(".", 1)[0],
         year=year,
         document_type=document_type.strip() or "standard",
-        category=category.strip() or "general",
+        category=normalize_category(category),
+        subcategory=subcategory.strip(),
+        product_name=product_name.strip(),
+        language=language.strip() or "en",
         description=description.strip(),
         file_path=str(dest),
         file_size=len(content),
         source_url=source_url.strip(),
+        source_name=source_name.strip(),
+        source_type=source_type.strip() or "demo",
         status="uploaded",
     )
     db.add(document)

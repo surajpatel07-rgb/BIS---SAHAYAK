@@ -241,6 +241,7 @@ class FallbackLLMProvider(BaseLLMProvider):
 
         max_markers = int(getattr(self, "_max_markers", 4))
         picked: list[tuple[int, str]] = []
+        best_sentence_overlap = 0  # distinct query terms in the single best sentence
         for marker, body in blocks[:max_markers]:
             # Drop the "Source: ... | Page n" header line of each context block
             body_lines = [ln for ln in body.strip().splitlines() if not ln.strip().startswith("Source:")]
@@ -255,13 +256,23 @@ class FallbackLLMProvider(BaseLLMProvider):
                         continue  # only use sentences that actually match the question
                 else:
                     overlap = len(st) * 0.1
-                scored.append((overlap, s))
+                scored.append((overlap, s, st))
             scored.sort(key=lambda t: t[0], reverse=True)
-            for _, s in scored[:2]:
+            if scored:
+                best_sentence_overlap = max(best_sentence_overlap, scored[0][0])
+            for _, s, _st in scored[:2]:
                 if len(s) > 40 and not s.startswith(("http", "Page")):
                     picked.append((int(marker), s))
 
-        if not picked:
+        # Minimum-evidence gate: for multi-token questions the single best
+        # sentence must share at least TWO distinct query terms. This stops
+        # generic word collisions ("requirement", "content", "standard" in
+        # different sentences) from producing a confident-looking extractive
+        # answer to an unrelated question, while real topical matches share
+        # several terms (e.g. "packaged", "drinking", "water").
+        if not picked or (
+            q_tokens and len(q_tokens) >= 2 and best_sentence_overlap < 2
+        ):
             return (
                 "I could not find sufficient information in the indexed BIS documents "
                 "to answer this reliably."

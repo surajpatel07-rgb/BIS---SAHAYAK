@@ -26,7 +26,14 @@ def _resolve_sqlite_url(url: str) -> str:
 settings.database_url = _resolve_sqlite_url(settings.database_url)
 
 if settings.database_url.startswith("sqlite"):
-    engine_kwargs: dict = {"connect_args": {"check_same_thread": False}}
+    engine_kwargs: dict = {
+        "connect_args": {
+            "check_same_thread": False,
+            # Wait up to 30s for a locked DB instead of failing instantly —
+            # concurrent chat requests write concurrently under WAL.
+            "timeout": 30,
+        }
+    }
 else:
     engine_kwargs = {"pool_pre_ping": True}
 
@@ -44,6 +51,7 @@ if settings.database_url.startswith("sqlite"):
         cursor.execute("PRAGMA foreign_keys=ON")
         cursor.execute("PRAGMA journal_mode=WAL")
         cursor.execute("PRAGMA synchronous=NORMAL")
+        cursor.execute("PRAGMA busy_timeout=30000")
         cursor.close()
 
 

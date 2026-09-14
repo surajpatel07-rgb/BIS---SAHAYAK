@@ -22,6 +22,9 @@ logger = get_logger("app.startup_seed")
 
 BASE_DIR = Path(__file__).resolve().parent.parent.parent  # repo root
 SAMPLE_DIR = BASE_DIR / "data" / "sample_documents"
+# ABSOLUTE: the backend process CWD may be backend/, so a relative path would
+# scatter uploads into backend/data/uploads and break ingestion.
+UPLOADS_DIR = BASE_DIR / "data" / "uploads"
 
 USERS = [
     {"name": "BIS Admin", "email": "admin@bisbuddy.in", "password": "Admin@12345", "role": "admin"},
@@ -36,7 +39,9 @@ SAMPLE_DOCS = [
         "title": "Ordinary Portland Cement — Specification (Sample)",
         "year": 2020,
         "document_type": "standard",
-        "category": "cement",
+        "category": "everyday_products",
+        "subcategory": "Construction",
+        "product_name": "Ordinary Portland Cement",
     },
     {
         "file": "sample_IS_3025_helmet_spec.pdf",
@@ -45,7 +50,9 @@ SAMPLE_DOCS = [
         "title": "Industrial Safety Helmets — Specification (Sample)",
         "year": 2020,
         "document_type": "standard",
-        "category": "safety",
+        "category": "everyday_products",
+        "subcategory": "Safety",
+        "product_name": "Industrial Safety Helmets",
     },
     {
         "file": "sample_bis_consumer_guide.pdf",
@@ -54,7 +61,9 @@ SAMPLE_DOCS = [
         "title": "Understanding the ISI Mark — A Consumer Guide (Sample)",
         "year": 2024,
         "document_type": "guide",
-        "category": "consumer",
+        "category": "general_bis",
+        "subcategory": "Consumer Awareness",
+        "product_name": "",
     },
     {
         "file": "sample_bis_certification_process.pdf",
@@ -63,7 +72,64 @@ SAMPLE_DOCS = [
         "title": "BIS Product Certification — Process Guide for Manufacturers (Sample)",
         "year": 2024,
         "document_type": "guide",
-        "category": "certification",
+        "category": "industry",
+        "subcategory": "Certification",
+        "product_name": "",
+    },
+    {
+        "file": "sample_food_packaged_drinking_water.pdf",
+        "name": "Food Safety Guide — Packaged Drinking Water & BIS (SAMPLE)",
+        "standard_number": "FOOD-WATER-GUIDE",
+        "title": "Packaged Drinking Water and BIS Certification — Consumer Guide (Sample)",
+        "year": 2024,
+        "document_type": "guide",
+        "category": "food",
+        "subcategory": "Water",
+        "product_name": "Packaged Drinking Water",
+    },
+    {
+        "file": "sample_hallmarking_huid_guide.pdf",
+        "name": "Gold & Silver Hallmarking — HUID Consumer Guide (SAMPLE)",
+        "standard_number": "HALLMARK-GUIDE",
+        "title": "Understanding BIS Hallmarking, HUID and Fineness — Consumer Guide (Sample)",
+        "year": 2024,
+        "document_type": "guide",
+        "category": "hallmarking",
+        "subcategory": "Hallmarking",
+        "product_name": "Gold Jewellery Hallmarking",
+    },
+    {
+        "file": "sample_electronics_electrical_guide.pdf",
+        "name": "Electronics & Electrical Products — BIS Marks Guide (SAMPLE)",
+        "standard_number": "ELEC-GUIDE",
+        "title": "BIS Certification Marks on Electronics and Electrical Products — Consumer Guide (Sample)",
+        "year": 2024,
+        "document_type": "guide",
+        "category": "electronics_electrical",
+        "subcategory": "Appliances",
+        "product_name": "",
+    },
+    {
+        "file": "sample_everyday_products_guide.pdf",
+        "name": "Everyday Products — ISI Mark Buying Guide (SAMPLE)",
+        "standard_number": "EVERYDAY-GUIDE",
+        "title": "ISI Mark Buying Guide for Everyday Household Products (Sample)",
+        "year": 2024,
+        "document_type": "guide",
+        "category": "everyday_products",
+        "subcategory": "Household",
+        "product_name": "",
+    },
+    {
+        "file": "sample_general_bis_overview.pdf",
+        "name": "About BIS — Indian Standards, Marks and Consumer Services (SAMPLE)",
+        "standard_number": "BIS-OVERVIEW",
+        "title": "About the Bureau of Indian Standards — Overview for Consumers and Industry (Sample)",
+        "year": 2024,
+        "document_type": "guide",
+        "category": "general_bis",
+        "subcategory": "Overview",
+        "product_name": "",
     },
 ]
 
@@ -100,7 +166,7 @@ def seed_if_empty(db) -> None:  # noqa: ANN001 - SQLAlchemy Session
                 logger.warning("sample PDF missing, skipping %s: %s", spec["name"], src)
                 continue
 
-            dest = Path("data/uploads")
+            dest = UPLOADS_DIR
             dest.mkdir(parents=True, exist_ok=True)
             stored = dest / f"seed_{spec['file']}"
             shutil.copyfile(src, stored)
@@ -112,10 +178,15 @@ def seed_if_empty(db) -> None:  # noqa: ANN001 - SQLAlchemy Session
                 year=spec["year"],
                 document_type=spec["document_type"],
                 category=spec["category"],
+                subcategory=spec.get("subcategory", ""),
+                product_name=spec.get("product_name", ""),
                 description=f"Sample BIS-style document for development. {spec['title']}",
                 file_path=str(dest / stored.name),
                 file_size=stored.stat().st_size,
                 source_url="",
+                # Demo provenance — the UI shows a DEMO DATA badge for these.
+                source_name="BIS Buddy Demo Corpus",
+                source_type="demo",
                 status="uploaded",
             )
             db.add(doc)

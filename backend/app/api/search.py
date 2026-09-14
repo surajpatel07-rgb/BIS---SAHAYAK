@@ -4,6 +4,7 @@ from sqlalchemy.orm import Session
 
 from app.database.base import get_db
 from app.dependencies import get_current_user
+from app.knowledge.registry import normalize_category
 from app.models import Document, DocumentChunk, User
 from app.rag.retrieval import RetrievalService
 from app.schemas.documents import DocumentDetailOut, SearchHit, SemanticSearchResponse
@@ -16,12 +17,20 @@ def semantic_search(
     q: str = Query(min_length=1, max_length=1000),
     top_k: int = Query(default=8, ge=1, le=30),
     document_id: int | None = None,
+    category: str | None = None,
     db: Session = Depends(get_db),
     _user: User = Depends(get_current_user),
 ):
-    """Semantic search across indexed document chunks with reranking."""
+    """Semantic search across indexed document chunks with reranking.
+
+    category applies a hard metadata filter when given (search UI filter).
+    """
     chunks = RetrievalService().retrieve(
-        db, q, top_k=max(top_k * 2, 12), document_ids=[document_id] if document_id else None
+        db,
+        q,
+        top_k=max(top_k * 2, 12),
+        document_ids=[document_id] if document_id else None,
+        categories=[normalize_category(category)] if category else None,
     )
     hits = [
         SearchHit(
@@ -33,6 +42,8 @@ def semantic_search(
             section=c.section,
             snippet=c.chunk_text[:300],
             score=round(c.score, 4),
+            category=c.category,
+            year=c.year,
         )
         for c in chunks[:top_k]
     ]

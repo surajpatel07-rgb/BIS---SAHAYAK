@@ -25,14 +25,20 @@ function UploadForm() {
   const fileRef = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
+  const categories = useQuery({ queryKey: ["categories"], queryFn: api.categories });
   const [meta, setMeta] = useState({
     title: "",
     standard_number: "",
     year: "",
     document_type: "standard",
-    category: "general",
+    category: "general_bis",
+    subcategory: "",
+    product_name: "",
+    language: "en",
     description: "",
     source_url: "",
+    source_name: "",
+    source_type: "demo",
   });
 
   const upload = async (file: File) => {
@@ -114,10 +120,51 @@ function UploadForm() {
           <option value="order">Order / QCO</option>
           <option value="other">Other</option>
         </select>
-        <input
+        <select
           value={meta.category}
           onChange={(e) => setMeta({ ...meta, category: e.target.value })}
-          placeholder="Category, e.g. cement, electronics"
+          className="rounded-xl border px-3 py-2 text-sm outline-none focus:border-brand-500"
+        >
+          {(categories.data ?? []).map((c) => (
+            <option key={c.key} value={c.key}>
+              {c.emoji} {c.label}
+            </option>
+          ))}
+        </select>
+        <input
+          value={meta.subcategory}
+          onChange={(e) => setMeta({ ...meta, subcategory: e.target.value })}
+          placeholder="Subcategory (e.g. Water, Cables)"
+          className="rounded-xl border px-3 py-2 text-sm outline-none focus:border-brand-500"
+        />
+        <input
+          value={meta.product_name}
+          onChange={(e) => setMeta({ ...meta, product_name: e.target.value })}
+          placeholder="Product name (e.g. Packaged Drinking Water)"
+          className="rounded-xl border px-3 py-2 text-sm outline-none focus:border-brand-500"
+        />
+        <select
+          value={meta.language}
+          onChange={(e) => setMeta({ ...meta, language: e.target.value })}
+          className="rounded-xl border px-3 py-2 text-sm outline-none focus:border-brand-500"
+        >
+          <option value="en">English</option>
+          <option value="hi">Hindi</option>
+        </select>
+        <select
+          value={meta.source_type}
+          onChange={(e) => setMeta({ ...meta, source_type: e.target.value })}
+          className="rounded-xl border px-3 py-2 text-sm outline-none focus:border-brand-500"
+        >
+          <option value="official_bis">Official BIS source</option>
+          <option value="government">Government of India</option>
+          <option value="official">Other official</option>
+          <option value="demo">Demo / sample data</option>
+        </select>
+        <input
+          value={meta.source_name}
+          onChange={(e) => setMeta({ ...meta, source_name: e.target.value })}
+          placeholder="Source name (e.g. Bureau of Indian Standards)"
           className="rounded-xl border px-3 py-2 text-sm outline-none focus:border-brand-500"
         />
         <input
@@ -215,8 +262,178 @@ function DocumentRow({ d }: { d: DocumentOut }) {
   );
 }
 
+function KnowledgeStatsPanel() {
+  const kb = useQuery({ queryKey: ["knowledgeStats"], queryFn: api.knowledgeStats });
+  return (
+    <div className="rounded-2xl border bg-white p-5">
+      <h2 className="mb-1 font-bold text-slate-900">Knowledge base by category</h2>
+      <p className="mb-3 text-xs text-slate-500">
+        Live database counts — documents, indexed and chunks per knowledge category.
+      </p>
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b text-xs uppercase tracking-wide text-slate-500">
+              <th className="py-2 font-semibold">Category</th>
+              <th className="py-2 font-semibold">Docs</th>
+              <th className="py-2 font-semibold">Indexed</th>
+              <th className="py-2 font-semibold">Chunks</th>
+              <th className="py-2 font-semibold">Failed</th>
+            </tr>
+          </thead>
+          <tbody>
+            {(kb.data?.categories ?? []).map((c) => (
+              <tr key={c.key} className="border-b last:border-0">
+                <td className="py-2 font-medium text-slate-700">
+                  {c.emoji} {c.label}
+                </td>
+                <td className="py-2 text-slate-600">{c.documents}</td>
+                <td className="py-2 text-emerald-600">{c.indexed}</td>
+                <td className="py-2 text-slate-600">{c.chunks}</td>
+                <td className={`py-2 ${c.failed ? "text-red-500" : "text-slate-400"}`}>
+                  {c.failed}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-3 text-xs text-slate-400">
+        Registry: {kb.data?.total_products ?? 0} products · {kb.data?.total_standards ?? 0} standards
+        {kb.data?.last_updated
+          ? ` · last updated ${new Date(kb.data.last_updated).toLocaleString()}`
+          : ""}
+      </div>
+    </div>
+  );
+}
+
+function RagDebugPanel() {
+  const [q, setQ] = useState("");
+  const [submitted, setSubmitted] = useState("");
+  const trace = useQuery({
+    queryKey: ["ragDebug", submitted],
+    queryFn: () => api.ragDebug(submitted),
+    enabled: !!submitted,
+  });
+
+  return (
+    <div className="rounded-2xl border bg-white p-5">
+      <h2 className="mb-1 font-bold text-slate-900">RAG debugging panel</h2>
+      <p className="mb-3 text-xs text-slate-500">
+        Admin-only: inspect how a query is classified and which chunks the retriever picked.
+      </p>
+      <div className="flex gap-2">
+        <input
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") setSubmitted(q.trim());
+          }}
+          placeholder='Try: "What is HUID?" or "pressure cooker"'
+          className="w-full rounded-xl border px-3 py-2 text-sm outline-none focus:border-brand-500"
+        />
+        <button
+          onClick={() => setSubmitted(q.trim())}
+          disabled={!q.trim()}
+          className="rounded-xl bg-brand-600 px-4 py-2 text-sm font-semibold text-white hover:bg-brand-700 disabled:opacity-40"
+        >
+          Trace
+        </button>
+      </div>
+
+      {trace.isFetching && (
+        <div className="mt-3 flex items-center gap-2 text-sm text-slate-500">
+          <Loader2 className="h-4 w-4 animate-spin" /> Running retrieval trace…
+        </div>
+      )}
+
+      {trace.data && (
+        <div className="mt-4 space-y-3 text-sm">
+          <div className="grid gap-2 rounded-xl bg-slate-50 p-3 sm:grid-cols-2">
+            <div>
+              <span className="text-xs uppercase text-slate-400">Detected category</span>
+              <div className="font-semibold text-slate-700">
+                {trace.data.detected_category} ({trace.data.category_confidence})
+              </div>
+            </div>
+            <div>
+              <span className="text-xs uppercase text-slate-400">Language / product / standard</span>
+              <div className="font-semibold text-slate-700">
+                {trace.data.language} · {trace.data.matched_product || "—"} ·{" "}
+                {trace.data.detected_standard || "—"}
+              </div>
+            </div>
+            <div className="sm:col-span-2">
+              <span className="text-xs uppercase text-slate-400">Matched keywords</span>
+              <div className="mt-1 flex flex-wrap gap-1">
+                {trace.data.matched_keywords.map((k) => (
+                  <span
+                    key={k}
+                    className="rounded bg-white px-1.5 py-0.5 text-xs text-slate-600 ring-1 ring-slate-200"
+                  >
+                    {k}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1 text-xs font-semibold uppercase text-slate-400">
+              Candidates before rerank ({trace.data.candidates_before_rerank.length})
+            </div>
+            <div className="max-h-40 space-y-1 overflow-y-auto">
+              {trace.data.candidates_before_rerank.map((c, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between gap-2 rounded bg-slate-50 px-2 py-1 text-xs text-slate-600"
+                >
+                  <span className="truncate">
+                    {c.standard_number || c.document_name} · p{c.page} · {c.category} ·{" "}
+                    {c.source_type}
+                  </span>
+                  <span className="shrink-0 font-mono text-emerald-600">
+                    {c.vector_score.toFixed(3)}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1 text-xs font-semibold uppercase text-slate-400">
+              Selected chunks after rerank ({trace.data.selected_chunks.length})
+            </div>
+            <div className="space-y-1">
+              {trace.data.selected_chunks.map((c, i) => (
+                <div
+                  key={i}
+                  className="rounded bg-brand-50 px-2 py-1 text-xs text-slate-700"
+                >
+                  [{i + 1}] {c.standard_number || c.document_name} · p{c.page}
+                  {c.section ? ` · ${c.section}` : ""} · {c.category} —{" "}
+                  <span className="font-mono text-brand-700">{c.final_score.toFixed(3)}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <div className="mb-1 text-xs font-semibold uppercase text-slate-400">Final context</div>
+            <pre className="thin-scroll max-h-48 overflow-y-auto whitespace-pre-wrap rounded-xl bg-slate-900 p-3 text-[11px] leading-relaxed text-slate-100">
+              {trace.data.final_context}
+            </pre>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export default function AdminPage() {
   const [search, setSearch] = useState("");
+  const [tab, setTab] = useState<"documents" | "debug">("documents");
   const stats = useQuery({
     queryKey: ["adminStats"],
     queryFn: api.adminStats,
@@ -297,6 +514,36 @@ export default function AdminPage() {
           </div>
         </div>
 
+        <KnowledgeStatsPanel />
+
+        {/* Debug tab switch */}
+        <div className="mt-6 mb-4 flex gap-2">
+          <button
+            onClick={() => setTab("documents")}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              tab === "documents"
+                ? "bg-brand-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            Documents & ingestion
+          </button>
+          <button
+            onClick={() => setTab("debug")}
+            className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
+              tab === "debug"
+                ? "bg-brand-600 text-white"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+            }`}
+          >
+            RAG debugging
+          </button>
+        </div>
+
+        {tab === "debug" ? (
+          <RagDebugPanel />
+        ) : (
+        <>
         <div className="grid gap-6 lg:grid-cols-2">
           <UploadForm />
           <div className="rounded-2xl border bg-white p-5">
@@ -374,6 +621,8 @@ export default function AdminPage() {
             </table>
           </div>
         </div>
+        </>
+        )}
       </div>
     </div>
   );

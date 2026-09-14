@@ -5,7 +5,11 @@ from app.models.models import (
     Document,
     DocumentChunk,
     Feedback,
+    KnowledgeSource,
     Message,
+    Product,
+    ProductCategory,
+    StandardMetadata,
     User,
 )
 
@@ -17,4 +21,8 @@ __all__ = [
     "Document",
     "DocumentChunk",
     "Feedback",
+    "ProductCategory",
+    "Product",
+    "KnowledgeSource",
+    "StandardMetadata",
 ]

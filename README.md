@@ -106,14 +106,20 @@ the admin UI — ingestion never pretends to succeed.
 - 🔐 **Auth** — register/login/logout, bcrypt + JWT, `user` and `admin` roles
 - 💬 **Grounded chat** — RAG answers with inline `[n]` citation chips
 - 📄 **Citations** — document name, standard number, page, section, relevance score; click to open the PDF at the page
+- 🗂 **Knowledge categories** — Food & Water, Gold & Silver (hallmarking), Electronics & Electrical, Everyday Products, General BIS, Industry & Manufacturing; auto-detected per query and used to filter/boost retrieval
+- 🛒 **Product explorer** — category cards → product pages with standard, certification status, consumer checklist, related documents (never invents unknown standards — shows "Information not available")
+- ❓ **Related questions** — follow-ups generated only from the detected category context
+- 🌐 **Hindi support** — ask in Hindi (Devanagari or transliteration), answers come back in Hindi; standard numbers/document names stay untranslated
+- 🧩 **RAG debugging panel** (admin) — detected category, candidates, similarity + rerank scores, selected chunks, final LLM context
+- 🏷 **Source priority & labelling** — `official_bis > government > official > demo` weighting in retrieval; every document carries an OFFICIAL SOURCE / DEMO DATA badge
 - 📡 **Streaming** — SSE `/api/chat/stream` with thinking indicator
 - 👥 **Modes** — Consumer / Industry switch changes retrieval prompt + UI copy
-- 🔎 **Search** — metadata search (number/title/keyword) *and* semantic chunk-level search
+- 🔎 **Search** — metadata search (number/title/keyword/category) *and* semantic chunk-level search
 - 🗂 **Conversations** — persistent, searchable history; open any past chat
 - 🎙 **Voice** — Web Speech API input (Chrome/Edge); button auto-disables elsewhere
-- 🛠 **Admin dashboard** — stats cards, upload with metadata, re-index, delete, failure details
+- 🛠 **Admin dashboard** — stats cards, per-category knowledge stats, upload with full metadata (category/subcategory/product/language/source), re-index, delete, failure details
 - 👍 **Feedback** — thumbs up/down + comments, stored per message
-- 🧪 **Tests** — 19 backend tests incl. full offline RAG integration test
+- 🧪 **Tests** — 56 backend tests incl. full offline RAG integration + knowledge-base suites
 - 🐳 **Docker** — `docker compose up` for Postgres+pgvector, backend, frontend
 
 ---
@@ -314,14 +320,42 @@ npm run dev
 
 ## 12. Adding documents
 
+### Admin UI (recommended)
+
 1. Login as an **admin** → **Admin Dashboard**.
 2. Drop a PDF (≤ 25 MB, must contain a `%PDF` header and extractable text).
-3. Optionally set title, standard number, year, type, category, official `source_url`.
+3. Set metadata: title, standard number, year, type, **category** (six knowledge categories), subcategory, product name, language, **source type** (Official BIS / Government / Other official / Demo) and source URL/name.
 4. Watch the status pipeline: `uploaded → extracting → chunking → embedding → indexed`.
 5. Ask questions in chat — new content is immediately retrievable.
 
-> Use official BIS PDFs with their source URL for real deployments. Never rely on the
-> bundled SAMPLE documents for actual compliance decisions.
+### Bulk import from folders
+
+Drop PDFs into category folders and run the import script — the category is
+auto-detected from the folder (or override with `--category` / sidecar JSON):
+
+```text
+data/
+ ├── food/
+ ├── hallmarking/
+ ├── electronics/
+ ├── everyday_products/
+ ├── general_bis/
+ └── industry/
+```
+
+```bash
+python scripts/import_documents.py                  # import all folders
+python scripts/import_documents.py --category food  # one folder
+python scripts/import_documents.py --file doc.pdf --category hallmarking \
+    --source-type official_bis --source-name "Bureau of Indian Standards" \
+    --source-url https://www.bis.gov.in/ --standard-number "IS 1417"
+```
+
+Each PDF may have a sidecar JSON (`doc.pdf` → `doc.json`) with extra metadata:
+`{"title": ..., "standard_number": ..., "year": ..., "product_name": ..., "subcategory": ...}`.
+
+> Use official BIS PDFs with their source URL for real deployments (`--source-type official_bis`).
+> Never rely on the bundled SAMPLE documents for actual compliance decisions.
 
 ---
 
@@ -486,22 +520,35 @@ self-seed a fully working RAG corpus with real citations.
 
 ## SIH demo script (10 minutes)
 
-1. **Open** `http://localhost:5173` → landing page → **Get Started** → login
-   `demo@bisbuddy.in / Demo@12345`.
-2. Sidebar → select **Industry** mode (banner confirms).
-3. Ask: *"What standards and requirements should I check before manufacturing cement?"*
-4. RAG retrieves `IS 1234:2020` chunks; streamed answer appears.
-5. Point out **citation chips [1]** and **Sources cards** (standard, page, % match).
-6. **Click a citation chip** → PDF opens at the exact page in the document viewer.
-7. Follow-up: *"And what about the licence application process?"* — answer uses
-   conversation context + `BIS-PROCESS` document.
-8. Switch to **Consumer** mode → ask *"How do I check a product is BIS certified?"*
-   — simpler tone, consumer-guide citations.
-9. Open **Admin Dashboard** (login as admin in another tab if needed).
-10. **Upload a PDF** (use `data/sample_documents/sample_IS_3025_helmet_spec.pdf`).
-11. Narrate the live status pipeline → `indexed` with chunk count.
-12. Back in chat, ask: *"What is the shock absorption requirement for helmets?"* →
-    answer cites the newly uploaded document.
-13. Show **Documents** page semantic search and the 👍 feedback.
-14. Close with the grounding demo: ask something out-of-corpus ("fees for dragon
-    eggs certification") → honest refusal, no hallucination.
+### Part A — Category-aware knowledge demo (new)
+
+1. **Open** `http://localhost:5173` → login `demo@bisbuddy.in / Demo@12345`.
+2. **Consumer mode** → ask *"What should I know about BIS standards for packaged
+   drinking water?"* → category badge **Food & Water**, grounded answer citing the
+   food guide, related questions appear — click one.
+3. Ask *"What is HUID and why is it useful?"* → **Gold & Silver** category, answer
+   cites the hallmarking guide (IS 1417 domain, HUID explanation).
+4. Ask *"What should I check before buying an electrical product?"* →
+   **Electronics & Electrical** category with ISI/CRS guidance.
+5. Ask *"What should I check before buying a pressure cooker?"* → **Everyday
+   Products**, IS 2347, mandatory ISI mark guidance.
+6. **Hindi**: ask *"सोने की हॉलमार्किंग क्या होती है?"* → answer in Hindi with sources.
+7. Open **Explore Products** → click **💍 Gold & Silver** → **Gold Jewellery
+   Hallmarking** → show standard, certification status, consumer checklist,
+   DEMO DATA-labelled related documents.
+8. Switch to **Industry** mode → ask the cement manufacturing question (Part B step).
+
+### Part B — RAG pipeline demo
+
+1. Open **Admin Dashboard** (login as admin in another tab if needed).
+2. Show the **Knowledge base by category** live stats table.
+3. Open the **RAG debugging** tab → trace *"What is HUID?"* → narrate detected
+   category, 36 candidates, rerank scores, final context sent to Gemini.
+4. **Upload a PDF** (use `data/sample_documents/sample_IS_3025_helmet_spec.pdf`) with
+   category "Everyday Products".
+5. Narrate the live status pipeline → `indexed` with chunk count.
+6. Back in chat, ask: *"What is the shock absorption requirement for helmets?"* →
+   answer cites the newly uploaded document.
+7. Show **Documents** page category filter + semantic search and the 👍 feedback.
+8. Close with the grounding demo: ask something out-of-corpus ("fees for dragon
+   eggs certification") → honest refusal, no hallucination.

@@ -30,6 +30,11 @@ export interface ChatResponse {
   sources: Citation[];
   mode: string;
   llm_provider: string;
+  detected_category?: string;
+  category_label?: string;
+  category_confidence?: number;
+  language?: string;
+  related_questions?: string[];
 }
 
 export interface ConversationSummary {
@@ -94,6 +99,97 @@ export interface SearchHit {
   section: string;
   snippet: string;
   score: number;
+  category?: string;
+  year?: number | null;
+}
+
+// ---- Knowledge base -------------------------------------------------------
+export interface KnowledgeCategory {
+  key: string;
+  label: string;
+  emoji: string;
+  description: string;
+  document_count: number;
+}
+
+export interface ProductSummary {
+  id: number;
+  name: string;
+  category: string;
+  category_label: string;
+  category_emoji: string;
+  subcategory: string;
+  standard_number: string;
+  standard_title: string;
+  certification_status: string;
+  certification_status_display: string;
+  scheme: string;
+  consumer_checklist: string[];
+  notes: string;
+  info_available: boolean;
+}
+
+export interface ProductDetail extends ProductSummary {
+  related_documents: {
+    id: number;
+    name: string;
+    standard_number: string;
+    title: string;
+    year: number | null;
+    source_type: string;
+    source_name: string;
+  }[];
+  related_questions: string[];
+}
+
+export interface KnowledgeStats {
+  categories: {
+    key: string;
+    label: string;
+    emoji: string;
+    documents: number;
+    indexed: number;
+    chunks: number;
+    failed: number;
+  }[];
+  total_products: number;
+  total_standards: number;
+  last_updated: string | null;
+}
+
+export interface RagDebugTrace {
+  query: string;
+  language: string;
+  detected_category: string;
+  category_confidence: number;
+  matched_keywords: string[];
+  matched_product: string;
+  detected_standard: string;
+  category_filter_applied: boolean;
+  candidates_before_rerank: {
+    document_id: number;
+    document_name: string;
+    standard_number: string;
+    page: number;
+    section: string;
+    category: string;
+    source_type: string;
+    vector_score: number;
+  }[];
+  selected_chunks: {
+    document_id: number;
+    document_name: string;
+    standard_number: string;
+    page: number;
+    section: string;
+    category: string;
+    final_score: number;
+    snippet: string;
+  }[];
+  final_context: string;
+  embedding_model: string;
+  top_k: number;
+  rerank_top_n: number;
 }
 
 /**
@@ -206,10 +302,13 @@ export const api = {
     request<DocumentOut>(`/api/documents/${id}/reindex`, { method: "POST" }),
 
   // ---- search -----------------------------------------------------------------
-  semanticSearch: (q: string, topK = 8) =>
-    request<{ query: string; results: SearchHit[] }>(
-      `/api/search?q=${encodeURIComponent(q)}&top_k=${topK}`
-    ),
+  semanticSearch: (q: string, topK = 8, category?: string) => {
+    const params = new URLSearchParams({ q, top_k: String(topK) });
+    if (category) params.set("category", category);
+    return request<{ query: string; results: SearchHit[] }>(
+      `/api/search?${params.toString()}`
+    );
+  },
   documentSearch: (q?: string, category?: string, documentType?: string) => {
     const params = new URLSearchParams();
     if (q) params.set("q", q);
@@ -219,6 +318,22 @@ export const api = {
       `/api/search/documents?${params.toString()}`
     );
   },
+
+  // ---- knowledge base ---------------------------------------------------------
+  categories: () =>
+    request<KnowledgeCategory[]>("/api/knowledge/categories"),
+  products: (category?: string, q?: string) => {
+    const params = new URLSearchParams();
+    if (category) params.set("category", category);
+    if (q) params.set("q", q);
+    return request<ProductSummary[]>(`/api/knowledge/products?${params.toString()}`);
+  },
+  product: (id: number) => request<ProductDetail>(`/api/knowledge/products/${id}`),
+  knowledgeStats: () => request<KnowledgeStats>("/api/knowledge/stats"),
+  ragDebug: (q: string) =>
+    request<RagDebugTrace>(
+      `/api/knowledge/debug/retrieval?q=${encodeURIComponent(q)}`
+    ),
 
   // ---- misc ---------------------------------------------------------------
   feedback: (messageId: number, rating: 1 | -1, comment = "") =>
@@ -235,11 +350,30 @@ export const api = {
 
 /** Stream chat via SSE. Calls onDelta with each text piece; resolves with final payload. */
 export async function streamChat(
-  payload: { message: string; conversation_id: number | null; mode: string },
+  payload: {
+    message: string;
+    conversation_id: number | null;
+    mode: string;
+    category?: string | null;
+  },
   handlers: {
-    onMeta?: (meta: { conversation_id: number; llm_provider: string }) => void;
+    onMeta?: (meta: {
+      conversation_id: number;
+      llm_provider: string;
+      detected_category?: string;
+      category_label?: string;
+      language?: string;
+    }) => void;
     onDelta: (text: string) => void;
-    onDone: (final: { conversation_id: number; message_id: number; sources: Citation[] }) => void;
+    onDone: (final: {
+      conversation_id: number;
+      message_id: number;
+      sources: Citation[];
+      detected_category?: string;
+      category_label?: string;
+      related_questions?: string[];
+      language?: string;
+    }) => void;
     onError?: (message: string) => void;
   }
 ): Promise<void> {

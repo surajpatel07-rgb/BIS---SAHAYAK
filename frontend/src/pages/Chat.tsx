@@ -23,14 +23,45 @@ interface UiMessage {
   content: string;
   sources?: Citation[];
   feedback?: 1 | -1 | undefined;
+  detectedCategory?: string;
+  categoryLabel?: string;
+}
+
+/** Category chips shown under the last answer, generated from retrieved context. */
+function RelatedQuestions({
+  questions,
+  onPick,
+}: {
+  questions: string[];
+  onPick: (q: string) => void;
+}) {
+  if (!questions.length) return null;
+  return (
+    <div className="mt-3 border-t pt-3">
+      <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+        Related questions
+      </div>
+      <div className="flex flex-wrap gap-1.5">
+        {questions.map((q) => (
+          <button
+            key={q}
+            onClick={() => onPick(q)}
+            className="rounded-full border bg-slate-50 px-3 py-1 text-xs text-slate-600 transition hover:border-brand-500 hover:bg-brand-50"
+          >
+            {q}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 const SUGGESTIONS: Record<string, string[]> = {
   consumer: [
-    "How can I check if a product is BIS certified?",
-    "What is the ISI mark and what does it guarantee?",
-    "How do I file a complaint about a certified product?",
-    "Which products need mandatory BIS certification?",
+    "What should I know about BIS standards for packaged drinking water?",
+    "What is HUID and why is it useful?",
+    "What should I check before buying an electrical product?",
+    "What should I check before buying a pressure cooker?",
   ],
   industry: [
     "What standards and requirements should I check before manufacturing cement?",
@@ -132,6 +163,7 @@ export default function ChatPage() {
   const [streaming, setStreaming] = useState(false);
   const [streamText, setStreamText] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [related, setRelated] = useState<string[]>([]);
   const [voiceSupported, setVoiceSupported] = useState(true);
   const [listening, setListening] = useState(false);
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -240,8 +272,11 @@ export default function ChatPage() {
                 role: "assistant",
                 content: acc,
                 sources: final.sources,
+                detectedCategory: final.detected_category,
+                categoryLabel: final.category_label,
               },
             ]);
+            setRelated(final.related_questions ?? []);
           },
           onError: (msg) => {
             setError(msg || "The assistant is unavailable. Please try again.");
@@ -357,6 +392,13 @@ export default function ChatPage() {
                 ) : (
                   m.content
                 )}
+                {m.role === "assistant" && m.categoryLabel && (
+                  <div className="mb-2">
+                    <span className="rounded-full bg-indigo-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-indigo-600">
+                      {m.categoryLabel}
+                    </span>
+                  </div>
+                )}
                 {m.role === "assistant" && (m.sources?.length ?? 0) > 0 && (
                   <div className="mt-3 border-t pt-3">
                     <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
@@ -369,6 +411,11 @@ export default function ChatPage() {
                     </div>
                   </div>
                 )}
+                {m.role === "assistant" &&
+                  m === messages[messages.length - 1] &&
+                  !streaming && (
+                    <RelatedQuestions questions={related} onPick={(q) => send(q)} />
+                  )}
                 {m.role === "assistant" && typeof m.id === "number" && (
                   <div className="mt-2 flex gap-1">
                     <button

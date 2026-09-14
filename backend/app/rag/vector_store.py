@@ -39,6 +39,9 @@ class RetrievedChunk:
     year: int | None
     source_url: str
     score: float
+    source_type: str = "demo"
+    # set by the retrieval service when a category boost applies
+    category_boost: float = 0.0
 
     def to_citation(self) -> dict:
         return {
@@ -96,6 +99,7 @@ class SqlVectorStore(VectorStore):
         document_ids: list[int] | None = None,
         mode: str = "hybrid",
         query_text: str = "",
+        categories: list[str] | None = None,
     ) -> list[RetrievedChunk]:
         q = (
             db.query(DocumentChunk, Document)
@@ -105,6 +109,10 @@ class SqlVectorStore(VectorStore):
         )
         if document_ids:
             q = q.filter(DocumentChunk.document_id.in_(document_ids))
+        if categories:
+            # Metadata pre-filter: narrows the candidate pool to the detected
+            # knowledge category (postgres + sqlite compatible).
+            q = q.filter(Document.category.in_(categories))
 
         rows = q.all()
         if not rows:
@@ -147,6 +155,7 @@ class SqlVectorStore(VectorStore):
                     year=doc.year,
                     source_url=doc.source_url,
                     score=score,
+                    source_type=getattr(doc, "source_type", "demo"),
                 )
             )
         return results

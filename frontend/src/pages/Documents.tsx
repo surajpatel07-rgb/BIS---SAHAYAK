@@ -28,6 +28,44 @@ function StatusBadge({ status }: { status: string }) {
 
 export { StatusBadge };
 
+/** The six knowledge-category filter chips (live from the registry-backed API). */
+export function CategoryChips({
+  selected,
+  onPick,
+}: {
+  selected: string;
+  onPick: (key: string) => void;
+}) {
+  const categories = useQuery({ queryKey: ["categories"], queryFn: api.categories });
+  return (
+    <>
+      <button
+        onClick={() => onPick("")}
+        className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+          selected === ""
+            ? "bg-brand-600 text-white"
+            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+        }`}
+      >
+        All
+      </button>
+      {(categories.data ?? []).map((c) => (
+        <button
+          key={c.key}
+          onClick={() => onPick(c.key)}
+          className={`rounded-full px-3 py-1 text-xs font-medium transition ${
+            selected === c.key
+              ? "bg-brand-600 text-white"
+              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+          }`}
+        >
+          {c.emoji} {c.label}
+        </button>
+      ))}
+    </>
+  );
+}
+
 export default function DocumentsPage() {
   const { user } = useAuth();
   const [q, setQ] = useState("");
@@ -91,25 +129,7 @@ export default function DocumentsPage() {
             </button>
           </div>
           <div className="mt-3 flex flex-wrap gap-2">
-            {[
-              ["", "All categories"],
-              ["cement", "Cement"],
-              ["safety", "Safety"],
-              ["consumer", "Consumer"],
-              ["certification", "Certification"],
-            ].map(([v, label]) => (
-              <button
-                key={v}
-                onClick={() => setCategory(v)}
-                className={`rounded-full px-3 py-1 text-xs font-medium transition ${
-                  category === v
-                    ? "bg-brand-600 text-white"
-                    : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                }`}
-              >
-                {label}
-              </button>
-            ))}
+            <CategoryChips selected={category} onPick={setCategory} />
           </div>
         </div>
 

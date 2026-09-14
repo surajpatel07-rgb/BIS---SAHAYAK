@@ -7,6 +7,7 @@ import {
   LogOut,
   MessageSquarePlus,
   MessagesSquare,
+  PackageSearch,
   Settings as SettingsIcon,
   ShieldCheck,
   User as UserIcon,
@@ -133,6 +134,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="border-t border-white/10 px-4 py-3">
             <div className="space-y-1">
               {[
+                { to: "/explore", label: "Explore Products", icon: PackageSearch },
                 { to: "/documents", label: "Documents", icon: FileSearch },
                 ...(user?.role === "admin"
                   ? [{ to: "/admin", label: "Admin Dashboard", icon: LayoutDashboard }]

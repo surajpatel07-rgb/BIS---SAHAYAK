@@ -67,11 +67,15 @@ def ingest_document(db: Session, document_id: int) -> Document:
 
     Raises IngestionError on failure (after marking the document failed).
     """
+    from app.knowledge.registry import normalize_category
+
     document = db.get(Document, document_id)
     if document is None:
         raise IngestionError(f"Document {document_id} not found")
 
     try:
+        # Normalize the category to a canonical registry key at ingest time.
+        document.category = normalize_category(document.category)
         document.status = "processing"
         db.commit()
 
@@ -125,12 +129,41 @@ def ingest_document(db: Session, document_id: int) -> Document:
                         "document_name": document.name,
                         "standard_number": document.standard_number,
                         "title": document.title,
+                        "category": document.category,
+                        "subcategory": document.subcategory,
+                        "product_name": document.product_name,
+                        "source_type": document.source_type,
+                        "source_name": document.source_name,
+                        "source_url": document.source_url,
+                        "language": document.language,
+                        "publication_year": document.year,
                         "sequence": i,
                     },
                 )
             )
 
         _guess_metadata(document, cleaned)
+
+        # Sync StandardMetadata so explicitly-numbered documents appear in the
+        # standards catalog (only for numbers the registry knows, or any
+        # admin-declared number — never invented ones).
+        if document.standard_number:
+            from app.models import StandardMetadata
+
+            existing = (
+                db.query(StandardMetadata)
+                .filter(StandardMetadata.standard_number == document.standard_number)
+                .first()
+            )
+            if not existing:
+                db.add(
+                    StandardMetadata(
+                        standard_number=document.standard_number,
+                        title=document.title or document.name,
+                        category=document.category,
+                        product_name=document.product_name,
+                    )
+                )
 
         document.status = "indexed"
         document.error_message = ""
