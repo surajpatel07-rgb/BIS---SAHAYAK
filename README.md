@@ -427,6 +427,38 @@ needed — mount the repo or run seeding locally against the composed DB.
 - Put HTTPS in front (Caddy/Traefik/nginx) and restrict `CORS_ORIGINS` to your domain.
 - For scale-out, run Alembic migrations and move uploads to object storage.
 
+### Deploying to Render (backend + frontend in one free service)
+
+The repo ships a Render Blueprint (`render.yaml`) that builds the React frontend,
+copies it into `backend/static/`, and serves everything from one FastAPI service —
+no separate frontend host, no CORS issues, and SSE streaming works (Render does
+not buffer responses).
+
+1. Push this repo to GitHub (already done: `surajpatel07-rgb/BIS---SAHAYAK`).
+2. Render Dashboard → **New + → Blueprint** → select the repo → Apply. Render reads
+   `render.yaml` and prompts for the secret env vars.
+3. Set `GEMINI_API_KEY` (paste your key). `SECRET_KEY` is auto-generated.
+4. Deploy. On first boot the service auto-creates tables and **self-seeds** the demo
+   users and SAMPLE documents (disable later with `SEED_SAMPLE_DATA=false`).
+5. Your app is live at `https://<service>.onrender.com` — UI at `/`, API docs at `/docs`.
+
+Free-tier caveats: the service sleeps after ~15 min idle (first request ~50s to wake,
+so open the page before your demo) and the SQLite disk is **ephemeral** — uploaded
+PDFs disappear on redeploy (attach a Render Disk or use a managed Postgres for
+persistence). Long-term storage needs a paid plan.
+
+### Deploying the frontend to Vercel (alternative: separate hosts)
+
+1. Import the repo into Vercel, set **Root Directory** to `frontend/`.
+2. Add env var `VITE_API_BASE_URL=https://<your-backend>.onrender.com`.
+3. Deploy — `frontend/vercel.json` rewrites all routes to `index.html` (SPA routing).
+4. On the backend (Render), set `CORS_ORIGINS=https://<your-app>.vercel.app`.
+
+The frontend reads the API base from `VITE_API_BASE_URL` (default: same origin —
+which is what makes the single-service Render setup work with zero configuration).
+Sample PDFs live in `data/sample_documents/` and are committed, so cloud builds
+self-seed a fully working RAG corpus with real citations.
+
 ---
 
 ## 17. Limitations

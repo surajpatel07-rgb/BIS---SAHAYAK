@@ -96,7 +96,12 @@ export interface SearchHit {
   score: number;
 }
 
-const BASE = "https://bis-sahayak-jbim.onrender.com";
+/**
+ * API base URL.
+ * - unset/empty  → same-origin (Vite dev proxy locally, or backend-served SPA)
+ * - set in prod  → e.g. https://bis-sahayak-jbim.onrender.com (Vercel deploy)
+ */
+const BASE = (import.meta.env.VITE_API_BASE_URL ?? "").replace(/\/+$/, "");
 
 export class ApiError extends Error {
   status: number;
@@ -239,7 +244,7 @@ export async function streamChat(
   }
 ): Promise<void> {
   const token = localStorage.getItem("bisbuddy_token");
-  const res = await fetch("/api/chat/stream", {
+  const res = await fetch(`${BASE}/api/chat/stream`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

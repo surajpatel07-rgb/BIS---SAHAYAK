@@ -21,10 +21,11 @@ services:
       DATABASE_URL: postgresql+psycopg://bisbuddy:bisbuddy@db:5432/bisbuddy
       SECRET_KEY: ${SECRET_KEY:-dev-insecure-secret-change-me}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-3.1-flash-lite}
       EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-gemini}
       CORS_ORIGINS: http://localhost:5173,http://localhost:8080
       DATA_DIR: /app/data
+      SEED_SAMPLE_DATA: ${SEED_SAMPLE_DATA:-true}
       LOG_LEVEL: INFO
     volumes:
       - uploads:/app/data

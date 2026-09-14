@@ -56,8 +56,14 @@ class Settings(BaseSettings):
     # Ingestion
     max_upload_mb: int = 25
 
+    # First-run seeding (creates demo users + SAMPLE documents when the DB is empty)
+    seed_sample_data: bool = True
+
     # CORS
     cors_origins: str = "http://localhost:5173,http://127.0.1:5173"
+    # Optional regex allowing any <random>.onrender.com / *.vercel.app origin
+    # (leave empty in dev; set e.g. "https://.*\.onrender\.com" on Render)
+    cors_allow_regex: str = ""
 
     # App
     log_level: str = "INFO"
@@ -67,6 +73,10 @@ class Settings(BaseSettings):
     @property
     def cors_origin_list(self) -> list[str]:
         return [o.strip() for o in self.cors_origins.split(",") if o.strip()]
+
+    @property
+    def cors_regex_or_none(self) -> str | None:
+        return self.cors_allow_regex.strip() or None
 
     @property
     def data_path(self) -> Path:
