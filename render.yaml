@@ -59,7 +59,7 @@ services:
         value: "25"
       # First-run seeding of demo users + SAMPLE documents (idempotent).
       - key: SEED_SAMPLE_DATA
-        value: "true"
+        value: "false"
       # CORS — allow any *.onrender.com / *.vercel.app origin plus localhost.
       - key: CORS_ALLOW_REGEX
         value: 'https://.*\.onrender\.com|https://.*\.vercel\.app|http://localhost:5173'
