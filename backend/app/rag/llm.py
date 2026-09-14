@@ -8,9 +8,17 @@ Providers:
 
 Both providers implement `generate(prompt, system, history)` and
 `stream_generate(...)` so the chat service can swap them transparently.
+
+HYBRID ANSWER MODES
+The assistant runs in hybrid mode: BIS-specific questions are answered from
+retrieved RAG context with citations; general questions (or BIS questions the
+indexed documents cannot cover) are answered from Gemini's general knowledge,
+marked with [GENERAL ANSWER] so the pipeline never attaches document citations
+to claims that did not come from documents.
 """
 from __future__ import annotations
 
+import re
 from collections.abc import Iterator
 
 from app.config import settings
@@ -21,31 +29,51 @@ logger = get_logger("app.rag.llm")
 SYSTEM_PROMPT = """You are BIS Buddy, an AI assistant for Indian Standards (IS) and the \
 Bureau of Indian Standards (BIS) services, helping industries, manufacturers and consumers.
 
-STRICT GROUNDING RULES (non-negotiable):
+You operate in HYBRID mode with two answer styles. For every question, decide which style \
+applies:
+
+MODE A — BIS-GROUNDED ANSWERS (the question is about BIS/IS standards, certification, \
+compliance, testing, procedures, or product safety/quality requirements):
 1. Answer ONLY from the RETRIEVED CONTEXT provided in the prompt.
-2. If the retrieved context does not contain enough information to answer reliably, say \
-exactly: "I could not find sufficient information in the indexed BIS documents to answer \
-this reliably." and suggest what the user could ask instead or upload.
-3. NEVER invent standard numbers (IS XXXX), certification requirements, fees, forms, \
+2. NEVER invent standard numbers (IS XXXX), certification requirements, fees, forms, \
 deadlines or government rules.
-4. NEVER fabricate citations, and never cite a document or page that is not in the \
+3. NEVER fabricate citations, and never cite a document or page that is not in the \
 retrieved context.
-5. When you state a factual BIS-related claim, it must come from the context; the calling \
-service attaches citation markers automatically from the sources you use.
-6. You may give general, clearly-labelled explanations (e.g. what a conformity assessment \
-is) but must distinguish them from retrieved facts.
-7. Adapt tone to the user's mode: CONSUMER mode = simple language, safety focus, how to \
-check the ISI mark; INDUSTRY mode = precise, procedure/compliance-oriented language.
+4. When you state a factual BIS-related claim, it must come from the context; the calling \
+service resolves citation markers from the sources you use.
+5. If the retrieved context addresses the topic but lacks the specific detail asked for, \
+answer with what IS in the context, then state which specific detail the indexed \
+documents do not cover and suggest uploading or consulting the relevant standard.
+6. Adapt tone to the user's mode: CONSUMER = simple language, safety focus, how to check \
+the ISI mark; INDUSTRY = precise, procedure/compliance-oriented language.
+
+MODE B — GENERAL-KNOWLEDGE ANSWERS (everyday/general questions, or BIS-adjacent questions \
+where the retrieved context is unrelated to the question and clearly insufficient):
+1. Do NOT refuse and do NOT reply with "I could not find sufficient information" — \
+answer the question normally from your general knowledge in a helpful, polite, \
+professional tone.
+2. Stay transparent: briefly note that the answer draws on general knowledge rather \
+than the indexed BIS documents (one short lead-in line is enough).
+3. Never present general-knowledge claims as if they came from BIS documents, and never \
+invent standard numbers, fees, forms or rules. Where BIS involvement genuinely applies, \
+point the user to official channels (e.g. the BIS website / manakonline) without \
+inventing specific requirements.
+
+DECIDING BETWEEN MODES:
+- BIS-specific question + relevant retrieved context -> MODE A with [n] citations.
+- BIS-specific question + unrelated or insufficient retrieved context -> MODE B, noting \
+that the indexed documents do not yet cover the topic.
+- General, everyday question -> MODE B regardless of what was retrieved.
 
 OUTPUT FORMAT:
-- Answer the question directly, in clear prose and short bullets.
-- Immediately after any sentence(s) that rely on a specific retrieved chunk, append its \
-citation marker in square brackets, e.g. [1] or [2][3]. Markers refer to the numbered \
-context blocks in the prompt.
-- MANDATORY: every non-refusal answer MUST include at least one [n] citation marker. \
-An answer stating BIS facts with zero [n] markers is a failure — cite the block(s) you \
-used, e.g. end the first fact sentence with [1].
-- Keep the answer under 350 words unless asked for detail."""
+- Answer directly, in clear prose and short bullets. Keep the answer under 350 words \
+unless asked for detail.
+- MODE A only: immediately after any sentence(s) that rely on a specific retrieved chunk, \
+append its citation marker in square brackets, e.g. [1] or [2][3]. Every MODE A answer \
+MUST include at least one [n] citation marker — an answer stating BIS facts with zero \
+[n] markers is a failure.
+- MODE B only: begin the reply with the exact line [GENERAL ANSWER] on its own, then the \
+answer. Never append [n] markers, because no retrieved document is being quoted."""
 
 
 class LLMError(Exception):
@@ -54,19 +82,29 @@ class LLMError(Exception):
 
 REFUSAL_PHRASE = "could not find sufficient information"
 
+# Marker emitted by the LLM for MODE B (general-knowledge) answers in hybrid mode.
+# The chat pipeline strips it before saving/streaming and skips citation resolution
+# for such answers, so general answers never display document citations.
+GENERAL_MARKER = "[GENERAL ANSWER]"
+
 
 def ensure_citations(answer: str, n_chunks: int) -> str:
-    """Deterministic safety net: non-refusal answers always carry citation markers.
+    """Deterministic safety net: grounded answers always carry citation markers.
 
-    Gemini occasionally ignores the [n] marker instruction. The answer was still
-    generated from the retrieved context blocks, so when markers are missing we
-    append a Sources line referencing the top chunks. This keeps the citation
-    contract intact (every factual answer shows where it came from) without the
-    LLM inventing anything — markers only ever reference real retrieved chunks.
+    Gemini occasionally ignores the [n] marker instruction for MODE A answers.
+    The answer was still generated from the retrieved context blocks, so when
+    markers are missing we append a Sources line referencing the top chunks.
+    Refusals and [GENERAL ANSWER] (MODE B) replies are left untouched: a general
+    answer must never be decorated with document citations it did not use.
     """
     import re
 
-    if n_chunks <= 0 or REFUSAL_PHRASE in answer.lower():
+    lowered = answer.lower()
+    if (
+        n_chunks <= 0
+        or REFUSAL_PHRASE in lowered
+        or GENERAL_MARKER.lower() in lowered
+    ):
         return answer
     if re.search(r"\[\d{1,2}\]", answer):
         return answer
@@ -170,13 +208,24 @@ class FallbackLLMProvider(BaseLLMProvider):
 
     # ------------------------------------------------------------------
     def _compose(self, prompt: str) -> str:
-        import re
+        qm = re.search(r"USER QUESTION:\s*(.+)", prompt)
+        question = qm.group(1).strip() if qm else ""
 
         blocks = re.findall(
             r"\[(\d+)\][^\n]*\n(.*?)(?=\n\[\d+\]|\nUSER QUESTION:|\Z)",
             prompt,
             flags=re.DOTALL,
         )
+        if detect_answer_mode(question) == "general":
+            # MODE B without an API key: be transparent that generative
+            # general-knowledge answers are unavailable offline rather than
+            # pretending a refusal is the answer to the user's question.
+            return (
+                GENERAL_MARKER
+                + " Offline development mode can only answer from the indexed BIS "
+                "documents. Configure GEMINI_API_KEY to enable full general-knowledge "
+                "answers."
+            )
         if not blocks:
             return (
                 "I could not find sufficient information in the indexed BIS documents "
@@ -185,8 +234,6 @@ class FallbackLLMProvider(BaseLLMProvider):
             )
 
         # Rank sentences from each block by query-term overlap
-        qm = re.search(r"USER QUESTION:\s*(.+)", prompt)
-        question = qm.group(1).strip() if qm else ""
         q_tokens = set(re.findall(r"[a-z0-9]+", question.lower())) - {
             "what", "which", "how", "the", "a", "an", "is", "are", "for", "of", "to",
             "and", "in", "on", "does", "do", "i", "my", "me", "should", "can",
@@ -235,3 +282,64 @@ def get_llm_provider() -> BaseLLMProvider:
         except Exception as exc:  # noqa: BLE001
             logger.warning("Gemini provider unavailable (%s); using fallback", exc)
     return FallbackLLMProvider()
+
+
+# ----------------------------------------------------------------------------
+# Hybrid answer-mode classification
+#
+# BIS-oriented questions are answered from RAG context (MODE A). Everything
+# else — everyday questions, greetings, or BIS questions the indexed corpus
+# cannot cover — falls through to Gemini's general knowledge (MODE B) instead
+# of being refused. The classifier is deliberately lightweight and
+# recall-oriented: uncertain queries are treated as BIS-oriented so the model
+# still sees the retrieved context, and it may use MODE B transparently when
+# the context turns out to be unrelated.
+# ----------------------------------------------------------------------------
+
+_BIS_TOPIC_TERMS = (
+    # standards & documents
+    "is", "bis", "isi", "standard", "standards", "specification", "code",
+    "annex", "clause", "guideline", "guidelines", "manual", "act", "rules",
+    "bureau", "manak",
+    # certification & compliance
+    "certif", "licence", "license", "mark", "compliance", "conform",
+    "register", "registration", "approval", "accredit", "audit",
+    # industry procedure
+    "manufactur", "testing", "test", "requirement", "requirements", "procedure",
+    "documentation", "quality", "specification", "technical", "regulation",
+    "factory", "production", "import", "export", "safety", "hazard",
+    # consumer-side BIS topics
+    "complaint", "grievance", "hallmark", "label", "warranty", "genuine",
+    "fake", "counterfeit", "verify", "authentic", "recall",
+)
+
+_NON_BIS_HINTS = (
+    "weather", "recipe", "joke", "poem", "movie", "song", "cricket score",
+    "capital of", "who is the president", "translate", "python code",
+    "write an email", "resume",
+)
+
+
+def detect_answer_mode(question: str) -> str:
+    """Classify a question as "bis" (grounded) or "general" (model knowledge).
+
+    Recall-oriented: anything plausibly BIS-related is treated as "bis" so the
+    retrieved context stays available to the model. Truly general questions
+    (or those with no topic terms at all) route to "general".
+    """
+    q = (question or "").lower()
+    if not q.strip():
+        return "general"
+    if any(h in q for h in _NON_BIS_HINTS):
+        return "general"
+    # "is" is only a BIS signal as a standard prefix ("is 1234", "is 3025");
+    # as a bare word it is the verb "is", so require a following number of at
+    # least two digits (real IS standard numbers).
+    tokens = re.findall(r"[a-z0-9]+", q)
+    for i, tok in enumerate(tokens):
+        if tok == "is" and i + 1 < len(tokens) and len(tokens[i + 1]) >= 2 and tokens[i + 1].isdigit():
+            return "bis"
+    for term in _BIS_TOPIC_TERMS:
+        if term != "is" and term in q:
+            return "bis"
+    return "general"

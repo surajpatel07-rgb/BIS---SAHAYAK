@@ -103,14 +103,14 @@ def test_full_rag_flow_with_citations(client):
     assert [m["role"] for m in msgs] == ["user", "assistant"]
 
 
-def test_grounded_refusal_when_no_matching_content(client):
-    """The assistant must not invent requirements for out-of-corpus questions."""
+def test_grounded_refusal_when_bis_question_lacks_corpus_content(client):
+    """BIS-specific questions outside the corpus must not be answered from invention."""
     headers = _user_headers(client)
     r = client.post(
         "/api/chat",
         headers=headers,
         json={
-            "message": "zzzqxv bajamba florquet wibblewobble kwargnific?,".rstrip(","),
+            "message": "What is the beryllium content limit requirement in brass fittings?",
             "mode": "industry",
         },
     )
@@ -120,6 +120,20 @@ def test_grounded_refusal_when_no_matching_content(client):
     assert "could not find sufficient information" in data["answer"].lower() or (
         len(data["sources"]) == 0
     )
+
+
+def test_general_question_is_answered_without_document_citations(client):
+    """Hybrid MODE B: general questions are not refused and show no sources."""
+    headers = _user_headers(client)
+    r = client.post(
+        "/api/chat",
+        headers=headers,
+        json={"message": "What is the capital of France?", "mode": "consumer"},
+    )
+    assert r.status_code == 200
+    data = r.json()
+    assert "could not find sufficient information" not in data["answer"].lower()
+    assert data["sources"] == []
 
 
 def test_semantic_search_returns_chunk_hits(client):

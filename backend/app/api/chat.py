@@ -15,7 +15,9 @@ from app.models import Conversation, Message, User
 from app.models.models import utcnow
 from app.rag.llm import (
     FallbackLLMProvider,
+    GENERAL_MARKER,
     LLMError,
+    detect_answer_mode,
     ensure_citations,
     get_llm_provider,
 )
@@ -65,6 +67,36 @@ def _title_for(text: str) -> str:
     return text[:80] + ("…" if len(text) > 80 else "")
 
 
+def _hybridize(
+    question: str,
+    answer: str,
+    chunks: list[RetrievedChunk],
+    force_general: bool = False,
+) -> tuple[str, list[RetrievedChunk]]:
+    """Hybrid post-processing shared by /chat and /chat/stream.
+
+    detect_answer_mode routes the question: "bis" questions are grounded in the
+    retrieved chunks (citations guaranteed via ensure_citations), while
+    "general" questions are answered from the model's general knowledge. For
+    general answers the [GENERAL ANSWER] marker is stripped from the visible
+    text and no document citations are attached, so the UI never shows a
+    "Source: <pdf>" card for an answer that did not use the documents.
+    force_general marks answers where the model itself signalled MODE B (the
+    [GENERAL ANSWER] marker was present) even though the question classified
+    as BIS — e.g. the indexed context turned out to be unrelated.
+    """
+    if not force_general and detect_answer_mode(question) != "general":
+        # MODE A: grounded answer — guarantee citation markers, then resolve
+        # the [n] markers to only the chunks actually cited.
+        answer = ensure_citations(answer, len(chunks))
+        cited = _extract_cited_markers(answer, len(chunks))
+        used = [chunks[i - 1] for i in cited if 0 <= i - 1 < len(chunks)]
+        return answer, used
+    # MODE B: general-knowledge answer — strip the internal marker and drop citations.
+    cleaned = answer.replace(GENERAL_MARKER, "").strip()
+    return cleaned, []
+
+
 @router.post("/chat", response_model=ChatResponse)
 def chat(
     payload: ChatRequest,
@@ -111,11 +143,11 @@ def chat(
                 status.HTTP_502_BAD_GATEWAY,
                 "The AI service is temporarily unavailable. Please try again shortly.",
             ) from exc
-        answer = ensure_citations(answer, len(chunks))
-
-        # 6) Post-process: resolve [n] markers to actual sources actually cited
-        cited_indices = _extract_cited_markers(answer, len(chunks))
-        used = [chunks[i - 1] for i in cited_indices if 0 <= i - 1 < len(chunks)]
+        # 6) Hybrid post-processing: grounded vs general answers + citations
+        used_general = GENERAL_MARKER in answer
+        answer, used = _hybridize(
+            payload.message, answer, chunks, force_general=used_general
+        )
         citations = _citations(used)
 
         # 7) Persist
@@ -191,8 +223,11 @@ def stream_chat(
                 "llm_provider": provider.name,
                 "retrieved": len(chunks),
             })
+            marker_filter = _MarkerFilter(
+                provider.stream_generate(prompt, history=history)
+            )
             try:
-                for piece in provider.stream_generate(prompt, history=history):
+                for piece in marker_filter:
                     answer_parts.append(piece)
                     yield sse("delta", {"text": piece})
             except LLMError as exc:
@@ -201,9 +236,12 @@ def stream_chat(
                 return
 
             answer = "".join(answer_parts)
-            answer = ensure_citations(answer, len(chunks))
-            cited_indices = _extract_cited_markers(answer, len(chunks))
-            used = [chunks[i - 1] for i in cited_indices if 0 <= i - 1 < len(chunks)]
+            answer, used = _hybridize(
+                payload.message,
+                answer,
+                chunks,
+                force_general=marker_filter.marker_seen,
+            )
             citations = _citations(used)
 
             if not conversation.messages:
@@ -232,6 +270,54 @@ def stream_chat(
 
 def sse(event: str, data: dict) -> str:
     return f"event: {event}\ndata: {json.dumps(data)}\n\n"
+
+
+class _MarkerFilter:
+    """Filter a token stream, removing a leading [GENERAL ANSWER] marker.
+
+    The marker may be split across streamed pieces, so the head is buffered
+    until it either matches the marker prefix (then the marker is swallowed)
+    or diverges from it (then everything is released untouched). ``marker_seen``
+    records whether the marker was detected, so callers can treat the answer
+    as MODE B (general) after streaming completes.
+    """
+
+    def __init__(self, pieces) -> None:
+        self._pieces = pieces
+        self.marker_seen = False
+
+    def __iter__(self):
+        return self._gen()
+
+    def _gen(self):
+        marker = GENERAL_MARKER
+        head = ""
+        decided = False
+        for piece in self._pieces:
+            if decided:
+                yield piece
+                continue
+            head += piece
+            stripped = head.lstrip()
+            if not stripped.startswith(marker[: min(len(stripped), len(marker))]):
+                decided = True
+                yield head
+                continue
+            if len(stripped) > len(marker):
+                decided = True
+                self.marker_seen = True
+                rest = stripped[len(marker):].lstrip("\n :")
+                if rest:
+                    yield rest
+        if not decided and head:
+            stripped = head.lstrip()
+            if stripped.startswith(marker):
+                self.marker_seen = True
+                rest = stripped[len(marker):].lstrip("\n :")
+                if rest:
+                    yield rest
+            else:
+                yield head
 
 
 def _extract_cited_markers(answer: str, available: int) -> list[int]:

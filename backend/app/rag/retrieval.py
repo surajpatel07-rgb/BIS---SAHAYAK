@@ -71,8 +71,19 @@ class RetrievalService:
         return candidates
 
 
-def build_prompt(question: str, mode: str, history: list[dict], chunks: list[RetrievedChunk]) -> str:
-    """Assemble the grounded prompt sent to the LLM (context + question)."""
+def build_prompt(
+    question: str,
+    mode: str,
+    history: list[dict],
+    chunks: list[RetrievedChunk],
+) -> str:
+    """Assemble the grounded prompt sent to the LLM (context + question).
+
+    Context blocks are always provided when available; the closing instruction
+    adapts to the hybrid answer modes (see app.rag.llm.SYSTEM_PROMPT): the
+    model decides between a BIS-grounded answer (cite [n]) and a transparent
+    general-knowledge answer ([GENERAL ANSWER], no citations).
+    """
     context = _format_context(chunks)
     mode_note = (
         "USER MODE: CONSUMER — use simple language, focus on safety, product quality and "
@@ -81,12 +92,18 @@ def build_prompt(question: str, mode: str, history: list[dict], chunks: list[Ret
         else "USER MODE: INDUSTRY — use precise, procedure-oriented language covering standards, "
         "compliance steps, documentation and testing requirements."
     )
+    closing = (
+        "Decide the answer mode per your system instructions: if this is a BIS/standards "
+        "question the retrieved context can support, answer ONLY from the context and cite "
+        "blocks as [1], [2], ... immediately after the sentences that rely on them; "
+        "otherwise reply as a transparent general-knowledge answer starting with the "
+        "[GENERAL ANSWER] line and no [n] markers."
+    )
     return (
         f"{mode_note}\n\n"
         f"RETRIEVED CONTEXT (numbered blocks; cite as [n]):\n\n{context}\n\n"
         f"USER QUESTION: {question}\n\n"
-        "Answer using ONLY the retrieved context above. Cite blocks as [1], [2], ... "
-        "immediately after the sentences that rely on them."
+        f"{closing}"
     )
 
 

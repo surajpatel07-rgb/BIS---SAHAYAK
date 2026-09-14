@@ -1,0 +1,39 @@
+event: meta
+data: {"conversation_id": 21, "mode": "industry", "llm_provider": "gemini", "retrieved": 5}
+
+event: delta
+data: {"text": "To"}
+
+event: delta
+data: {"text": " obtain BIS certification for cement, manufacturers must comply with the requirements set forth under the BIS Act "}
+
+event: delta
+data: {"text": "2016 and the relevant Quality Control Orders [3][4]. The documentation required for the certification process includes the following"}
+
+event: delta
+data: {"text": " [1]:\n\n*   **Factory Documentation:** Proof of factory registration and a detailed layout plan of the manufacturing facility [1].\n*"}
+
+event: delta
+data: {"text": "   **Operational Documentation:** A comprehensive manufacturing process flow chart and a formal quality control plan [1].\n*   **Technical Assets"}
+
+event: delta
+data: {"text": ":** A complete list of machinery and test equipment, along with valid calibration certificates for all test equipment [1].\n*   **Legal/"}
+
+event: delta
+data: {"text": "Administrative:** Trademark registration documents [1].\n*   **Compliance Evidence:** Test reports issued by BIS-recognised laboratories"}
+
+event: delta
+data: {"text": " [1].\n\nPlease note that the exact documentation requirements may vary depending on the specific Indian Standard applicable to the product [1]."}
+
+event: delta
+data: {"text": " For cement, the product must conform to the specifications outlined in IS 1234:2020, which also references"}
+
+event: delta
+data: {"text": " IS 4031 for physical testing methods and IS 4032 for chemical analysis methods [2][5]. Manufacturers"}
+
+event: delta
+data: {"text": " must obtain a valid BIS licence before applying the Standard Mark (ISI mark) to their products [2]."}
+
+event: done
+data: {"conversation_id": 21, "message_id": 42, "sources": [{"document_id": 3, "document_name": "BIS Consumer Guide \u2014 Understanding the ISI Mark (SAMPLE)", "standard_number": "CONSUMER-GUIDE", "title": "Understanding the ISI Mark \u2014 A Consumer Guide (Sample)", "page": 4, "section": "MANDATORY CERTIFICATION SCHEMES", "chunk_id": 3, "relevance_score": 0.4677, "source_url": "", "document_type": "guide", "category": "consumer", "year": 2024, "snippet": "MANDATORY CERTIFICATION SCHEMES\nUnder the BIS Act 2016, certain products require mandatory BIS certification before sale in India.\nExamples include cement, steel, electrical appliances, LPG cylinders, food colours and automotive\nhelmets. The list of goods subject to mandatory cer"}, {"document_id": 4, "document_name": "BIS Product Certification Process for Manufacturers (SAMPLE)", "standard_number": "BIS-PROCESS", "title": "BIS Product Certification \u2014 Process Guide for Manufacturers (Sample)", "page": 1, "section": "OVERVIEW OF THE CERTIFICATION PROCESS", "chunk_id": 0, "relevance_score": 0.413, "source_url": "", "document_type": "guide", "category": "certification", "year": 2024, "snippet": "OVERVIEW OF THE CERTIFICATION PROCESS\nThe Bureau of Indian Standards operates product certification under the BIS Act 2016 and the BIS\nConformity Assessment Regulations 2018. Domestic manufacturers follow the Normal Procedure\n(Scheme I) or the Simplified Procedure for small entit"}, {"document_id": 4, "document_name": "BIS Product Certification Process for Manufacturers (SAMPLE)", "standard_number": "BIS-PROCESS", "title": "BIS Product Certification \u2014 Process Guide for Manufacturers (Sample)", "page": 3, "section": "DOCUMENTS REQUIRED FROM THE MANUFACTURER", "chunk_id": 3, "relevance_score": 0.4984, "source_url": "", "document_type": "guide", "category": "certification", "year": 2024, "snippet": "DOCUMENTS REQUIRED FROM THE MANUFACTURER\nTypical documents: factory registration proof, manufacturing process flow chart, list of machinery and\ntest equipment, calibration certificates of test equipment, quality control plan, layout plan of the factory,\ntrademark registration, an"}, {"document_id": 1, "document_name": "IS 1234:2020 Portland Cement \u2014 Specification (SAMPLE)", "standard_number": "IS 1234:2020", "title": "Ordinary Portland Cement \u2014 Specification (Sample)", "page": 5, "section": "5. CERTIFICATION AND MARKING", "chunk_id": 6, "relevance_score": 0.4819, "source_url": "", "document_type": "standard", "category": "cement", "year": 2020, "snippet": "5. CERTIFICATION AND MARKING\nEvery bag of cement shall be legibly and indelibly marked with the manufacturer's name, the grade of\ncement, the week and year of manufacture, and the BIS certification mark (ISI mark) under a valid BIS\nlicence per the BIS Act 2016. Cement conforming "}, {"document_id": 1, "document_name": "IS 1234:2020 Portland Cement \u2014 Specification (SAMPLE)", "standard_number": "IS 1234:2020", "title": "Ordinary Portland Cement \u2014 Specification (Sample)", "page": 2, "section": "2. REFERENCES", "chunk_id": 1, "relevance_score": 0.4082, "source_url": "", "document_type": "standard", "category": "cement", "year": 2020, "snippet": "2. REFERENCES\nThe following standards are referred to in this standard: IS 4031 for methods of physical tests on\nhydraulic cement, and IS 4032 for methods of chemical analysis of hydraulic cement.\nOrdinary Portland Cement \u00b7 Specification (Sample) \u00b7 page 2\n\nSAMPLE DATA \u00b7 NOT AN OF"}]}
+

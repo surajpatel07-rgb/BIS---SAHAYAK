@@ -30,11 +30,15 @@ conversational AI assistant.
 | Auth | JWT login/register, bcrypt hashing, admin-only management routes |
 | Feedback | 👍/👎 + comment per assistant message |
 
-**Grounding guarantee** — the assistant is contractually forbidden (system prompt +
-code) from inventing standard numbers, fees, or requirements. If retrieval finds no
-supporting content, it replies:
-*"I could not find sufficient information in the indexed BIS documents to answer this
-reliably."* — and the offline fallback provider enforces the same rule deterministically.
+**Grounding guarantee** — the assistant runs in **hybrid mode**. BIS-specific questions
+(standards, certification, compliance, product safety) are answered *only* from retrieved
+document context, with `[n]` citations resolved to exact pages; the assistant is
+contractually forbidden (system prompt + code) from inventing standard numbers, fees, or
+requirements. General questions — or BIS topics the indexed corpus doesn't yet cover —
+are answered transparently from the model's general knowledge (marked internally as
+`[GENERAL ANSWER]`) instead of being refused, and those answers deliberately show **no**
+document citations. The offline fallback provider enforces the same split:
+extractive answers for BIS questions, a transparent offline notice for general ones.
 
 ---
 
@@ -334,14 +338,18 @@ npm run dev
 4. **Reranking** — a second-stage scorer blends query-term coverage, exact phrase
    hits, standard-number matches (`IS 1234` etc.) and title alignment; the blended
    score becomes the citation's `relevance_score`.
-5. **Grounded generation** — the top 5 chunks are serialised as numbered context
-   blocks into the prompt. The system prompt *requires* `[n]` markers after every
-   factual claim and refusal when context is insufficient. The API resolves the
-   markers into structured `sources`; anything not cited isn't claimed as sourced.
+5. **Hybrid generation** — the top 5 chunks are serialised as numbered context
+   blocks into the prompt. A lightweight classifier routes the question: BIS-oriented
+   questions get grounded answers (the system prompt *requires* `[n]` markers after
+   factual claims, and the API resolves them into structured `sources` — anything not
+   cited isn't claimed as sourced); general questions get a transparent
+   general-knowledge answer with no citations. The model can also opt into the general
+   style itself when the retrieved context turns out to be unrelated.
 6. **Fallback provider** — without `GEMINI_API_KEY`, an extractive provider answers
-   using only sentences from the retrieved context that share terms with the
-   question, and refuses otherwise. The app is never a mock; it just answers more
-   conservatively.
+   BIS questions using only sentences from the retrieved context that share terms with
+   the question (refusing when none match), and transparently reports that generative
+   general-knowledge answers are unavailable offline. The app is never a mock; it just
+   answers more conservatively.
 
 ---
 

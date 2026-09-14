@@ -1,0 +1,42 @@
+event: meta
+data: {"conversation_id": 22, "mode": "consumer", "llm_provider": "gemini", "retrieved": 5}
+
+event: delta
+data: {"text": "Staying focused while studying can be challenging, but here are a few effective tips"}
+
+event: delta
+data: {"text": " to help you maintain concentration:\n\n*   **Use the Pomodoro Technique:** Break your study time into manageable chunks, such as 2"}
+
+event: delta
+data: {"text": "5 minutes of focused work followed by a 5-minute break. This helps prevent mental fatigue.\n*   **Create a"}
+
+event: delta
+data: {"text": " Dedicated Study Space:** Find a quiet, well-lit area free from distractions like your phone or television. Keeping your workspace"}
+
+event: delta
+data: {"text": " organized can help keep your mind clear.\n*   **Set Clear Goals:** Before you start, decide exactly what you want to accomplish"}
+
+event: delta
+data: {"text": " in that session. Breaking large tasks into smaller, actionable steps makes them feel less overwhelming.\n*   **Minimize Digital"}
+
+event: delta
+data: {"text": " Distractions:** Use website blockers or put your phone in another room to avoid the temptation of checking social media or notifications while"}
+
+event: delta
+data: {"text": " you are working.\n*   **Prioritize Your Health:** Ensure you are getting enough sleep, staying hydrated, and eating"}
+
+event: delta
+data: {"text": " well. A tired brain struggles to focus, so taking care of your physical well-being is essential for mental performance.\n*   **Active"}
+
+event: delta
+data: {"text": " Learning:** Instead of just reading, try summarizing what you\u2019ve learned in your own words, drawing diagrams, or teaching the"}
+
+event: delta
+data: {"text": " concept to someone else. Engaging with the material actively keeps your brain alert.\n\nSince the provided BIS documents focus on product certification and"}
+
+event: delta
+data: {"text": " safety standards, they do not contain information regarding study habits or exam preparation."}
+
+event: done
+data: {"conversation_id": 22, "message_id": 44, "sources": []}
+

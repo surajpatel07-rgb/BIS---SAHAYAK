@@ -1,0 +1,21 @@
+event: meta
+data: {"conversation_id": 20, "mode": "consumer", "llm_provider": "gemini", "retrieved": 5}
+
+event: delta
+data: {"text": "For"}
+
+event: delta
+data: {"text": " ordinary Portland cement, the setting time requirements are as follows:\n\n*   The"}
+
+event: delta
+data: {"text": " initial setting time must be at least 30 minutes [3].\n*   The final setting time must not exceed 600 minutes"}
+
+event: delta
+data: {"text": " [3].\n\nThese requirements are determined by testing the cement according to the methods specified in IS 4031 Part 4"}
+
+event: delta
+data: {"text": " [3]."}
+
+event: done
+data: {"conversation_id": 20, "message_id": 40, "sources": [{"document_id": 1, "document_name": "IS 1234:2020 Portland Cement \u2014 Specification (SAMPLE)", "standard_number": "IS 1234:2020", "title": "Ordinary Portland Cement \u2014 Specification (Sample)", "page": 4, "section": "1. 4.2 Setting time \u00b7 The initial setting time shall not be less than 30 minutes and the final setting time", "chunk_id": 4, "relevance_score": 0.4695, "source_url": "", "document_type": "standard", "category": "cement", "year": 2020, "snippet": "1. 4.2 Setting time \u00b7 The initial setting time shall not be less than 30 minutes and the final setting time\nshall not exceed 600 minutes when tested per IS 4031 Part 4. 4.3 Soundness \u00b7 The expansion of cement\npaste shall not exceed 10 mm when tested by Le Chatelier method per IS "}]}
+
