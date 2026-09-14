@@ -1,0 +1,308 @@
+{
+  "label": "after",
+  "created_at": "2026-09-13T21:31:03.585905+00:00",
+  "embedding_provider": "gemini",
+  "llm_provider": "gemini",
+  "questions": 6,
+  "retrieval_hits": 5,
+  "hit_rate": 0.833,
+  "avg_top_score": 0.4493,
+  "avg_latency_s": 3.58,
+  "results": [
+    {
+      "question": "What standards and requirements should I check before manufacturing cement?",
+      "mode": "industry",
+      "expected_standard": "IS 1234",
+      "retrieval_hit": true,
+      "top_doc": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+      "top_page": 5,
+      "top_vector_score": 0.3632,
+      "top_scores": [
+        0.3632,
+        0.3592,
+        0.3587,
+        0.3534,
+        0.3432
+      ],
+      "citations_used": [
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 1,
+          "section": "1. SCOPE",
+          "score": 0.3592
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 5,
+          "section": "5.1 Licence application · The manufacturer shall apply to BIS in the prescribed form with details of",
+          "score": 0.3632
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 2,
+          "section": "2. REFERENCES",
+          "score": 0.3587
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 5,
+          "section": "5. CERTIFICATION AND MARKING",
+          "score": 0.3534
+        },
+        {
+          "document_name": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+          "standard_number": "CONSUMER-GUIDE",
+          "page": 1,
+          "section": "WHAT IS THE ISI MARK",
+          "score": 0.3432
+        }
+      ],
+      "answer": "To ensure compliance when manufacturing cement under IS 1234:2020, you must adhere to the following procedural and technical requirements:\n\n*   **Scope of Compliance:** The standard applies to 33, 43, and 53 grade ordinary Portland cement intended for general concrete construction [2].\n*   **Licensing Procedure:** You must apply to BIS in the prescribed form. Your application must include comprehensive details regarding your manufacturing process, quality control setup, and available test facilities [1].\n*   **Testing Standards:** You are required to follow specific testing protocols:\n    *   **Physical Tests:** Refer to IS 4031 for methods of physical testing on hydraulic cement [3].\n    *   **Chemical Analysis:** Refer to IS 4032 for methods of chemical analysis of hydraulic cement [3].\n*   **Certification and Marking:**\n    *   You must obtain a valid BIS licence before applying the Standard Mark (ISI mark) to your products [4].\n    *   The ISI mark serves as certification that the product has been tested and conforms to the requirements of the applicable Indian Standard [5].\n    *   Every bag must be legibly and indelibly marked with the manufacturer's name, the cement grade, the week and year of manufacture, and the BIS certification mark [4].",
+      "latency_s": 4.07
+    },
+    {
+      "question": "How do I check if a safety helmet is BIS certified and what should I look for?",
+      "mode": "consumer",
+      "expected_standard": "IS 2925",
+      "retrieval_hit": false,
+      "top_doc": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+      "top_page": 2,
+      "top_vector_score": 0.4735,
+      "top_scores": [
+        0.4735,
+        0.4229,
+        0.4229,
+        0.4229,
+        0.4124
+      ],
+      "citations_used": [
+        {
+          "document_name": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+          "standard_number": "CONSUMER-GUIDE",
+          "page": 2,
+          "section": "1. Look for the ISI mark on the product or its packaging. 2. Find the licence number (format",
+          "score": 0.4735
+        },
+        {
+          "document_name": "IS 2925:2020 Industrial Safety Helmets (SAMPLE)",
+          "standard_number": "IS 2925:2020",
+          "page": 3,
+          "section": "3. CERTIFICATION AND MARKING",
+          "score": 0.4229
+        },
+        {
+          "document_name": "test_upload.pdf",
+          "standard_number": "IS 2925T",
+          "page": 3,
+          "section": "3. CERTIFICATION AND MARKING",
+          "score": 0.4229
+        },
+        {
+          "document_name": "ui_upload_helmet.pdf",
+          "standard_number": "",
+          "page": 3,
+          "section": "3. CERTIFICATION AND MARKING",
+          "score": 0.4229
+        },
+        {
+          "document_name": "IS 2925:2020 Industrial Safety Helmets (SAMPLE)",
+          "standard_number": "IS 2925:2020",
+          "page": 2,
+          "section": "2.1 Shock absorption · When tested per the method given in this standard, the transmitted force to the",
+          "score": 0.4124
+        }
+      ],
+      "answer": "To ensure your safety helmet is genuine and meets quality standards, you should look for the following:\n\n*   **The ISI Mark:** Check the product or its packaging for the BIS ISI certification mark [1].\n*   **Licence Number:** Look for a licence number printed below the ISI mark, which follows the format \"CM/L-xxxxxxxxxx\" [1].\n*   **Product Details:** The helmet should be permanently and legibly marked with the manufacturer's name, the month and year of manufacture, and the size [2][3][4].\n*   **Verification:** You can verify the licence number by visiting the BIS website and using the 'Product Certification · Verify Licence' tool [1]. Ensure that the product category matches the licence scope [1].\n\n**What to do if you suspect a fake:**\nIf you find a product that displays the ISI mark but lacks a valid licence number, you can report it to BIS using the BIS Care mobile application or the official BIS consumer complaints portal [1].\n\n**Why this matters for your safety:**\nBIS-certified industrial safety helmets are subject to factory inspections to verify quality control and testing facilities [2][3][4]. These helmets are tested for specific safety features, such as shock absorption (ensuring transmitted force does not exceed 5 kN), penetration resistance, and the presence of an adjustable chin strap with a specific release force [5].",
+      "latency_s": 4.09
+    },
+    {
+      "question": "What is the setting time requirement for ordinary portland cement?",
+      "mode": "industry",
+      "expected_standard": "IS 1234",
+      "retrieval_hit": true,
+      "top_doc": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+      "top_page": 4,
+      "top_vector_score": 0.4752,
+      "top_scores": [
+        0.4752,
+        0.4737,
+        0.4695,
+        0.4693,
+        0.4672
+      ],
+      "citations_used": [
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 4,
+          "section": "1. 4.2 Setting time · The initial setting time shall not be less than 30 minutes and the final setting time",
+          "score": 0.4695
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 2,
+          "section": "2. REFERENCES",
+          "score": 0.4737
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 6,
+          "section": "6. SAMPLING AND TESTS",
+          "score": 0.4693
+        }
+      ],
+      "answer": "For compliance with IS 1234:2020 regarding Ordinary Portland Cement, the setting time requirements are as follows:\n\n*   **Initial Setting Time:** The cement must have an initial setting time of not less than 30 minutes [3].\n*   **Final Setting Time:** The final setting time must not exceed 600 minutes [3].\n*   **Testing Methodology:** These parameters must be determined in accordance with the testing methods specified in IS 4031 Part 4 [3]. \n\nGeneral testing for hydraulic cement, including physical tests, must adhere to the methods prescribed in IS 4031 [2][4].",
+      "latency_s": 3.28
+    },
+    {
+      "question": "How can I identify a genuine ISI mark on a product?",
+      "mode": "consumer",
+      "expected_standard": "CONSUMER-GUIDE",
+      "retrieval_hit": true,
+      "top_doc": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+      "top_page": 2,
+      "top_vector_score": 0.5081,
+      "top_scores": [
+        0.5081,
+        0.498,
+        0.4938,
+        0.4737,
+        0.4152
+      ],
+      "citations_used": [
+        {
+          "document_name": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+          "standard_number": "CONSUMER-GUIDE",
+          "page": 2,
+          "section": "1. Look for the ISI mark on the product or its packaging. 2. Find the licence number (format",
+          "score": 0.5081
+        },
+        {
+          "document_name": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+          "standard_number": "CONSUMER-GUIDE",
+          "page": 1,
+          "section": "WHAT IS THE ISI MARK",
+          "score": 0.498
+        },
+        {
+          "document_name": "BIS Product Certification Process for Manufacturers (SAMPLE)",
+          "standard_number": "BIS-PROCESS",
+          "page": 6,
+          "section": "MARKING REQUIREMENTS",
+          "score": 0.4938
+        },
+        {
+          "document_name": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+          "standard_number": "CONSUMER-GUIDE",
+          "page": 3,
+          "section": "CONSUMER COMPLAINTS",
+          "score": 0.4152
+        }
+      ],
+      "answer": "To identify a genuine ISI mark and ensure the product you are buying meets quality and safety standards, follow these steps:\n\n*   **Look for the Mark:** Check the product or its packaging for the ISI mark [1]. This mark confirms that the product has been tested and meets the requirements of the relevant Indian Standard [2].\n*   **Check the Licence Number:** A genuine product will have a licence number in the format **CM/L-xxxxxxxxxx** printed directly below the ISI mark [1][3].\n*   **Verify Online:** You can verify the authenticity of the licence number by visiting the BIS website and using the 'Product Certification · Verify Licence' tool [1]. Ensure that the product category you are viewing matches the scope of the licence [1].\n*   **Report Concerns:** If you find a product with an ISI mark that lacks a valid licence number, or if you suspect the product is substandard, you can lodge a complaint [1][5]. You can do this through the **BIS Care mobile application**, the BIS consumer complaints portal, or by contacting your nearest BIS branch office [1][5]. \n\nBIS takes action against the misuse of the Standard Mark, which may include penalties under the BIS Act 2016 [5].",
+      "latency_s": 3.48
+    },
+    {
+      "question": "What documents are needed to apply for BIS certification as a manufacturer?",
+      "mode": "industry",
+      "expected_standard": "BIS-PROCESS",
+      "retrieval_hit": true,
+      "top_doc": "BIS Product Certification Process for Manufacturers (SAMPLE)",
+      "top_page": 3,
+      "top_vector_score": 0.5257,
+      "top_scores": [
+        0.5257,
+        0.4603,
+        0.4202,
+        0.4171,
+        0.4156
+      ],
+      "citations_used": [
+        {
+          "document_name": "BIS Product Certification Process for Manufacturers (SAMPLE)",
+          "standard_number": "BIS-PROCESS",
+          "page": 2,
+          "section": "1. Submit application on the BIS portal with fees and factory details. 2. BIS officer audits the factory:",
+          "score": 0.4603
+        },
+        {
+          "document_name": "BIS Product Certification Process for Manufacturers (SAMPLE)",
+          "standard_number": "BIS-PROCESS",
+          "page": 3,
+          "section": "DOCUMENTS REQUIRED FROM THE MANUFACTURER",
+          "score": 0.5257
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 5,
+          "section": "5.1 Licence application · The manufacturer shall apply to BIS in the prescribed form with details of",
+          "score": 0.4171
+        },
+        {
+          "document_name": "IS 2925:2020 Industrial Safety Helmets (SAMPLE)",
+          "standard_number": "IS 2925:2020",
+          "page": 3,
+          "section": "3. CERTIFICATION AND MARKING",
+          "score": 0.4156
+        }
+      ],
+      "answer": "To apply for BIS certification, manufacturers must submit an application via the BIS portal, which includes the payment of fees and the provision of factory details [2]. \n\nThe documentation required for the application process typically includes the following [1]:\n\n*   **Factory Documentation:** Proof of factory registration, a detailed layout plan of the factory, and a manufacturing process flow chart [1].\n*   **Quality and Technical Records:** A comprehensive quality control plan, a list of machinery and test equipment, and valid calibration certificates for all test equipment [1].\n*   **Legal and Compliance Documents:** Trademark registration and test reports issued by BIS-recognised laboratories [1].\n*   **Operational Details:** Specific information regarding the manufacturing process, quality control setup, and test facilities [4].\n\nPlease note that the exact documentation requirements are contingent upon the specific Indian Standard applicable to your product [1]. During the certification process, BIS officers will conduct a factory audit to verify your process, quality control, and testing facilities [2][5].",
+      "latency_s": 3.48
+    },
+    {
+      "question": "What is the shelf life of cement and how should it be stored?",
+      "mode": "industry",
+      "expected_standard": "IS 1234",
+      "retrieval_hit": true,
+      "top_doc": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+      "top_page": 4,
+      "top_vector_score": 0.3499,
+      "top_scores": [
+        0.3499,
+        0.3451,
+        0.3392,
+        0.3381,
+        0.3297
+      ],
+      "citations_used": [
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 4,
+          "section": "1. 4.2 Setting time · The initial setting time shall not be less than 30 minutes and the final setting time",
+          "score": 0.3499
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 5,
+          "section": "5. CERTIFICATION AND MARKING",
+          "score": 0.3392
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 3,
+          "section": "3. MATERIALS AND MANUFACTURE",
+          "score": 0.3381
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 2,
+          "section": "2. REFERENCES",
+          "score": 0.3297
+        }
+      ],
+      "answer": "I could not find sufficient information in the indexed BIS documents to answer this reliably. The provided context covers specifications for setting time, soundness, compressive strength, manufacturing processes, and certification/marking requirements, but it does not contain information regarding the shelf life or storage conditions of cement [1][3][4].\n\nYou may wish to ask about the specific physical or chemical testing requirements for cement, or the mandatory marking requirements for cement packaging, which are covered in the provided documentation [1][3][5].",
+      "latency_s": 3.07
+    }
+  ]
+}

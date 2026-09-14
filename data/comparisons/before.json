@@ -1,0 +1,259 @@
+{
+  "label": "before",
+  "created_at": "2026-09-13T20:40:53.829594+00:00",
+  "embedding_provider": "hash",
+  "llm_provider": "fallback",
+  "questions": 6,
+  "retrieval_hits": 4,
+  "hit_rate": 0.667,
+  "avg_top_score": 0.3536,
+  "avg_latency_s": 0.03,
+  "results": [
+    {
+      "question": "What standards and requirements should I check before manufacturing cement?",
+      "mode": "industry",
+      "expected_standard": "IS 1234",
+      "retrieval_hit": true,
+      "top_doc": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+      "top_page": 1,
+      "top_vector_score": 0.2632,
+      "top_scores": [
+        0.2632,
+        0.2335,
+        0.1588,
+        0.1329,
+        0.1117
+      ],
+      "citations_used": [
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 1,
+          "section": "This standard prescribes the requirements and the related methods of sampling and testing for ordinary",
+          "score": 0.2632
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 5,
+          "section": "cement, the week and year of manufacture, and the BIS certification mark (ISI mark) under a valid BIS",
+          "score": 0.2335
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 3,
+          "section": "burning them at clinkering temperature, grinding the resultant clinker, and adding a small percentage of",
+          "score": 0.1588
+        }
+      ],
+      "answer": "Based on the indexed BIS documents (development mode: extractive answer, configure GEMINI_API_KEY for full generative answers):\n- This standard prescribes the requirements and the related methods of sampling and testing for ordinary\nPortland cement used in general concrete construction. [1]\n- REFERENCES\nThe following standards are referred to in this standard: IS 4031 for methods of physical tests on\nhydraulic cement, and IS 4032 for methods of chemical analysis of hydraulic cement. [1]\n- Cement conforming to this standard may be marked with the Standard\nMark under a BIS licence; the manufacturer must obtain a licence from BIS before applying the mark. [2]\n- cement, the week and year of manufacture, and the BIS certification mark (ISI mark) under a valid BIS\nlicence per the BIS Act 2016. [2]\n- Ordinary Portland Cement · Specification (Sample) · page 3\n\nSAMPLE DATA · NOT AN OFFICIAL BIS DOCUMENT\nOrdinary Portland Cement · Specification (Sample)\n4. [3]\n- REQUIREMENTS\n4.1 Fineness · The residue on 90-micron sieve shall not exceed 10 percent when tested per IS 4031 Part\n1. [3]",
+      "latency_s": 0.09
+    },
+    {
+      "question": "How do I check if a safety helmet is BIS certified and what should I look for?",
+      "mode": "consumer",
+      "expected_standard": "IS 2925",
+      "retrieval_hit": false,
+      "top_doc": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+      "top_page": 2,
+      "top_vector_score": 0.3991,
+      "top_scores": [
+        0.3991,
+        0.2694,
+        0.2673,
+        0.2673,
+        0.2672
+      ],
+      "citations_used": [
+        {
+          "document_name": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+          "standard_number": "CONSUMER-GUIDE",
+          "page": 2,
+          "section": "HOW TO CHECK A PRODUCT IS BIS CERTIFIED",
+          "score": 0.3991
+        },
+        {
+          "document_name": "ui_upload_helmet.pdf",
+          "standard_number": "",
+          "page": 3,
+          "section": "3. CERTIFICATION AND MARKING",
+          "score": 0.2694
+        },
+        {
+          "document_name": "IS 2925:2020 Industrial Safety Helmets (SAMPLE)",
+          "standard_number": "IS 2925:2020",
+          "page": 1,
+          "section": "This standard covers requirements for industrial safety helmets for protection of workers against impact",
+          "score": 0.2673
+        }
+      ],
+      "answer": "Based on the indexed BIS documents (development mode: extractive answer, configure GEMINI_API_KEY for full generative answers):\n- HOW TO CHECK A PRODUCT IS BIS CERTIFIED\n1. [1]\n- Look for the ISI mark on the product or its packaging. [1]\n- CERTIFICATION AND MARKING\nEach helmet shall be permanently and legibly marked with manufacturer name, month and year of\nmanufacture, size, and the BIS ISI certification mark under a valid BIS licence. [2]\n- Industrial Safety Helmets · Specification (Sample) · page 3\n\nSAMPLE DATA · NOT AN OFFICIAL BIS DOCUMENT\nIndustrial Safety Helmets · Specification (Sample) [2]\n- Industrial Safety Helmets · Specification (Sample) · page 1\n\nSAMPLE DATA · NOT AN OFFICIAL BIS DOCUMENT\nIndustrial Safety Helmets · Specification (Sample)\n2. [3]\n- This standard covers requirements for industrial safety helmets for protection of workers against impact\nfrom falling objects in industrial environments. [3]",
+      "latency_s": 0.02
+    },
+    {
+      "question": "What is the setting time requirement for ordinary portland cement?",
+      "mode": "industry",
+      "expected_standard": "IS 1234",
+      "retrieval_hit": true,
+      "top_doc": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+      "top_page": 3,
+      "top_vector_score": 0.5052,
+      "top_scores": [
+        0.5052,
+        0.3846,
+        0.3599,
+        0.3376,
+        0.3358
+      ],
+      "citations_used": [
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 3,
+          "section": "burning them at clinkering temperature, grinding the resultant clinker, and adding a small percentage of",
+          "score": 0.5052
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 1,
+          "section": "This standard prescribes the requirements and the related methods of sampling and testing for ordinary",
+          "score": 0.3846
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 3,
+          "section": "burning them at clinkering temperature, grinding the resultant clinker, and adding a small percentage of",
+          "score": 0.3599
+        }
+      ],
+      "answer": "Based on the indexed BIS documents (development mode: extractive answer, configure GEMINI_API_KEY for full generative answers):\n- Ordinary Portland Cement · Specification (Sample) · page 3\n\nSAMPLE DATA · NOT AN OFFICIAL BIS DOCUMENT\nOrdinary Portland Cement · Specification (Sample)\n4. [1]\n- Ordinary Portland Cement · Specification (Sample) · page 4 [1]\n- This standard prescribes the requirements and the related methods of sampling and testing for ordinary\nPortland cement used in general concrete construction. [2]\n- This standard applies to 33, 43 and 53 grade\nordinary Portland cement. [2]\n- Ordinary Portland Cement · Specification (Sample) · page 4\n\nSAMPLE DATA · NOT AN OFFICIAL BIS DOCUMENT\nOrdinary Portland Cement · Specification (Sample)\n5. [3]\n- 53 grade cement shall be not less than 53 MPa at\n28 days when tested per IS 4031 Part 6. [3]",
+      "latency_s": 0.01
+    },
+    {
+      "question": "How can I identify a genuine ISI mark on a product?",
+      "mode": "consumer",
+      "expected_standard": "CONSUMER-GUIDE",
+      "retrieval_hit": true,
+      "top_doc": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+      "top_page": 2,
+      "top_vector_score": 0.3738,
+      "top_scores": [
+        0.3738,
+        0.3672,
+        0.3578,
+        0.334,
+        0.2946
+      ],
+      "citations_used": [
+        {
+          "document_name": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+          "standard_number": "CONSUMER-GUIDE",
+          "page": 2,
+          "section": "HOW TO CHECK A PRODUCT IS BIS CERTIFIED",
+          "score": 0.3738
+        },
+        {
+          "document_name": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+          "standard_number": "CONSUMER-GUIDE",
+          "page": 2,
+          "section": "product bears the ISI mark without a valid licence number, consumers may lodge a complaint with BIS",
+          "score": 0.3672
+        },
+        {
+          "document_name": "BIS Consumer Guide — Understanding the ISI Mark (SAMPLE)",
+          "standard_number": "CONSUMER-GUIDE",
+          "page": 1,
+          "section": "The ISI mark is a certification mark issued by the Bureau of Indian Standards for products that conform",
+          "score": 0.3578
+        }
+      ],
+      "answer": "Based on the indexed BIS documents (development mode: extractive answer, configure GEMINI_API_KEY for full generative answers):\n- Look for the ISI mark on the product or its packaging. [1]\n- HOW TO CHECK A PRODUCT IS BIS CERTIFIED\n1. [1]\n- product bears the ISI mark without a valid licence number, consumers may lodge a complaint with BIS\nthrough the BIS Care mobile application or the BIS consumer complaints portal. [2]\n- Understanding the ISI Mark · A Consumer Guide (Sample) · page 2\n\nSAMPLE DATA · NOT AN OFFICIAL BIS DOCUMENT\nUnderstanding the ISI Mark · A Consumer Guide (Sample) [2]\n- The ISI mark is a certification mark issued by the Bureau of Indian Standards for products that conform\nto the relevant Indian Standard. [3]\n- The mark certifies that the product has been tested and found to\nconform to the requirements of the applicable Indian Standard. [3]",
+      "latency_s": 0.01
+    },
+    {
+      "question": "What documents are needed to apply for BIS certification as a manufacturer?",
+      "mode": "industry",
+      "expected_standard": "BIS-PROCESS",
+      "retrieval_hit": false,
+      "top_doc": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+      "top_page": 5,
+      "top_vector_score": 0.3279,
+      "top_scores": [
+        0.3279,
+        0.2972,
+        0.2676,
+        0.2631,
+        0.2569
+      ],
+      "citations_used": [
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 5,
+          "section": "cement, the week and year of manufacture, and the BIS certification mark (ISI mark) under a valid BIS",
+          "score": 0.3279
+        },
+        {
+          "document_name": "BIS Product Certification Process for Manufacturers (SAMPLE)",
+          "standard_number": "BIS-PROCESS",
+          "page": 2,
+          "section": "STEP-BY-STEP APPLICATION (NORMAL PROCEDURE)",
+          "score": 0.2972
+        },
+        {
+          "document_name": "BIS Product Certification Process for Manufacturers (SAMPLE)",
+          "standard_number": "BIS-PROCESS",
+          "page": 5,
+          "section": "FEES AND VALIDITY",
+          "score": 0.2676
+        }
+      ],
+      "answer": "Based on the indexed BIS documents (development mode: extractive answer, configure GEMINI_API_KEY for full generative answers):\n- 5.1 Licence application · The manufacturer shall apply to BIS in the prescribed form with details of\nmanufacturing process, quality control setup and test facilities. [1]\n- cement, the week and year of manufacture, and the BIS certification mark (ISI mark) under a valid BIS\nlicence per the BIS Act 2016. [1]\n- BIS Product Certification · Process Guide for Manufacturers (Sample) · page 2\n\nSAMPLE DATA · NOT AN OFFICIAL BIS DOCUMENT\nBIS Product Certification · Process Guide for Manufacturers (Sample) [2]\n- Submit application on the BIS portal with fees and factory details. [2]\n- BIS Product Certification · Process Guide for Manufacturers (Sample) · page 5\n\nSAMPLE DATA · NOT AN OFFICIAL BIS DOCUMENT\nBIS Product Certification · Process Guide for Manufacturers (Sample) [3]\n- FEES AND VALIDITY\nApplication and licence fees are prescribed in the BIS Conformity Assessment Regulations 2018;\nconsult the official BIS portal for the current fee schedule. [3]",
+      "latency_s": 0.02
+    },
+    {
+      "question": "What is the shelf life of cement and how should it be stored?",
+      "mode": "industry",
+      "expected_standard": "IS 1234",
+      "retrieval_hit": true,
+      "top_doc": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+      "top_page": 3,
+      "top_vector_score": 0.2525,
+      "top_scores": [
+        0.2525,
+        0.2312,
+        0.2291,
+        0.2181,
+        0.2172
+      ],
+      "citations_used": [
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 3,
+          "section": "burning them at clinkering temperature, grinding the resultant clinker, and adding a small percentage of",
+          "score": 0.2525
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 5,
+          "section": "cement, the week and year of manufacture, and the BIS certification mark (ISI mark) under a valid BIS",
+          "score": 0.2312
+        },
+        {
+          "document_name": "IS 1234:2020 Portland Cement — Specification (SAMPLE)",
+          "standard_number": "IS 1234:2020",
+          "page": 3,
+          "section": "burning them at clinkering temperature, grinding the resultant clinker, and adding a small percentage of",
+          "score": 0.2291
+        }
+      ],
+      "answer": "Based on the indexed BIS documents (development mode: extractive answer, configure GEMINI_API_KEY for full generative answers):\n- 53 grade cement shall be not less than 53 MPa at\n28 days when tested per IS 4031 Part 6. [1]\n- CERTIFICATION AND MARKING\nEvery bag of cement shall be legibly and indelibly marked with the manufacturer's name, the grade of [1]\n- Cement conforming to this standard may be marked with the Standard\nMark under a BIS licence; the manufacturer must obtain a licence from BIS before applying the mark. [2]\n- cement, the week and year of manufacture, and the BIS certification mark (ISI mark) under a valid BIS\nlicence per the BIS Act 2016. [2]\n- 4.4\nCompressive strength · The compressive strength of 53 grade cement shall be not less than 53 MPa at\n28 days when tested per IS 4031 Part 6. [3]\n- Ordinary Portland Cement · Specification (Sample) · page 3\n\nSAMPLE DATA · NOT AN OFFICIAL BIS DOCUMENT\nOrdinary Portland Cement · Specification (Sample)\n4. [3]",
+      "latency_s": 0.01
+    }
+  ]
+}

@@ -1,0 +1,6 @@
+event: meta
+data: {"conversation_id": 15, "mode": "industry", "llm_provider": "gemini", "retrieved": 5}
+
+event: error
+data: {"message": "The AI service is temporarily unavailable."}
+

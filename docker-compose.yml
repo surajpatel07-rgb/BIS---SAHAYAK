@@ -1,0 +1,46 @@
+services:
+  db:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: bisbuddy
+      POSTGRES_PASSWORD: bisbuddy
+      POSTGRES_DB: bisbuddy
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U bisbuddy"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_URL: postgresql+psycopg://bisbuddy:bisbuddy@db:5432/bisbuddy
+      SECRET_KEY: ${SECRET_KEY:-dev-insecure-secret-change-me}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.0-flash}
+      EMBEDDING_PROVIDER: ${EMBEDDING_PROVIDER:-gemini}
+      CORS_ORIGINS: http://localhost:5173,http://localhost:8080
+      DATA_DIR: /app/data
+      LOG_LEVEL: INFO
+    volumes:
+      - uploads:/app/data
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  pgdata:
+  uploads:
