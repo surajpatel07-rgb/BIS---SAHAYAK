@@ -84,20 +84,21 @@ class RetrievalService:
         understanding: optionally pass a precomputed QueryUnderstanding to
         avoid re-classifying (the chat endpoint does this once per query).
         """
-        from app.knowledge.registry import CATEGORIES
+        from app.knowledge.registry import CATEGORIES, related_categories_for
 
         u = understanding or understand_query(query)
         effective_query = query or query_text
         provider = get_embedding_provider()
         query_embedding = provider.embed_query(effective_query)
 
-        # Category strategy: explicit filter wins; confident detection filters;
-        # weak detection boosts only.
+        # Category strategy: explicit filter wins; confident detection filters
+        # (widened to related categories so e.g. a water question can still hit
+        # food/packaging documents); weak detection boosts only.
         used_filter: list[str] | None = categories
         category_boost = 0.0
         if used_filter is None:
             if u.category_confidence >= _CONFIDENT_CATEGORY and u.category in CATEGORIES:
-                used_filter = [u.category]
+                used_filter = [u.category, *related_categories_for(u.category)]
             elif u.category_confidence > 0.15 and u.category in CATEGORIES:
                 category_boost = min(0.12, u.category_confidence * 0.15)
 

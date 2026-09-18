@@ -40,6 +40,7 @@ class RetrievedChunk:
     source_url: str
     score: float
     source_type: str = "demo"
+    source_name: str = ""  # provenance label (e.g. "Bureau of Indian Standards")
     # set by the retrieval service when a category boost applies
     category_boost: float = 0.0
 
@@ -58,6 +59,8 @@ class RetrievedChunk:
             "category": self.category,
             "year": self.year,
             "snippet": self.chunk_text[:280],
+            "source_name": self.source_name,
+            "source_type": self.source_type,
         }
 
 
@@ -156,6 +159,7 @@ class SqlVectorStore(VectorStore):
                     source_url=doc.source_url,
                     score=score,
                     source_type=getattr(doc, "source_type", "demo"),
+                    source_name=getattr(doc, "source_name", "") or "",
                 )
             )
         return results

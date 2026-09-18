@@ -8,6 +8,7 @@ import {
   MessageSquarePlus,
   MessagesSquare,
   PackageSearch,
+  ScanSearch,
   Settings as SettingsIcon,
   ShieldCheck,
   User as UserIcon,
@@ -134,6 +135,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
           <div className="border-t border-white/10 px-4 py-3">
             <div className="space-y-1">
               {[
+                { to: "/identify", label: "AI Product Identifier", icon: ScanSearch },
                 { to: "/explore", label: "Explore Products", icon: PackageSearch },
                 { to: "/documents", label: "Documents", icon: FileSearch },
                 ...(user?.role === "admin"

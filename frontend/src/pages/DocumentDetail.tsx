@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -21,6 +21,28 @@ export default function DocumentDetailPage() {
     queryFn: () => api.document(id),
   });
   const [page, setPage] = useState<number>(1);
+  // The PDF <iframe> navigates like a tab: no Authorization header is sent,
+  // so mint a short-lived document-scoped token for it.
+  const [tokenUrl, setTokenUrl] = useState<string | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    setTokenUrl(null);
+    setFileError(null);
+    api.documentFileTokenUrl(id)
+      .then((url) => {
+        if (!cancelled) setTokenUrl(url);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setFileError("Source unavailable — the PDF viewer could not be loaded.");
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [id]);
 
   if (doc.isLoading) {
     return (
@@ -41,7 +63,7 @@ export default function DocumentDetailPage() {
   }
 
   const d = doc.data;
-  const fileUrl = api.documentFileUrl(d.id);
+  const fileUrl = tokenUrl ?? api.documentFileUrl(d.id);
 
   return (
     <div className="thin-scroll h-full overflow-y-auto">
@@ -146,12 +168,24 @@ export default function DocumentDetailPage() {
                     </button>
                   </div>
                 </div>
-                <iframe
-                  key={page}
-                  src={`${fileUrl}#page=${page}`}
-                  title="PDF preview"
-                  className="h-[560px] w-full"
-                />
+                {fileError ? (
+                  <div className="flex h-[280px] flex-col items-center justify-center gap-2 bg-slate-50 text-sm text-slate-500">
+                    <FileText className="h-8 w-8 text-slate-300" />
+                    <p className="font-semibold text-slate-600">Source unavailable</p>
+                    <p className="text-xs">{fileError}</p>
+                  </div>
+                ) : !tokenUrl ? (
+                  <div className="flex h-[280px] items-center justify-center bg-slate-50 text-sm text-slate-400">
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Loading PDF…
+                  </div>
+                ) : (
+                  <iframe
+                    key={`${page}-${tokenUrl}`}
+                    src={`${fileUrl}#page=${page}`}
+                    title="PDF preview"
+                    className="h-[560px] w-full"
+                  />
+                )}
                 <div className="border-t bg-slate-50 px-4 py-2 text-xs text-slate-500">
                   Citations in chat link directly to the page shown here
                   ({`/#page=n`} behavior depends on your browser's PDF plugin).

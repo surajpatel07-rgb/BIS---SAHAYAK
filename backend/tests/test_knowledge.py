@@ -14,6 +14,7 @@ from app.knowledge.registry import (
     PRODUCTS,
     find_product,
     normalize_category,
+    related_categories_for,
     related_questions_for,
 )
 from app.rag.query_understanding import detect_language, understand_query
@@ -22,16 +23,28 @@ from app.rag.query_understanding import detect_language, understand_query
 # ---------------------------------------------------------------------------
 # Registry honesty
 # ---------------------------------------------------------------------------
-def test_registry_has_six_categories():
+def test_registry_has_expanded_categories():
     expected = {
         "food",
+        "water",
+        "packaging",
         "hallmarking",
         "electronics_electrical",
         "everyday_products",
+        "construction",
         "general_bis",
         "industry",
     }
     assert set(CATEGORIES.keys()) == expected
+
+
+def test_category_aliases_and_related_map():
+    assert normalize_category("gold_silver") == "hallmarking"
+    assert normalize_category("household") == "everyday_products"
+    assert normalize_category("consumer_products") == "everyday_products"
+    assert related_categories_for("water") == ["food", "packaging"]
+    assert related_categories_for("packaging") == ["food", "water"]
+    assert related_categories_for("construction") == ["everyday_products"]
 
 
 def test_products_without_known_standards_expose_no_number():
@@ -79,7 +92,7 @@ def test_normalize_legacy_categories():
         ("What should I check before buying a pressure cooker?", "everyday_products"),
         ("What does HUID mean?", "hallmarking"),
         ("Is BIS certification required for this electrical product?", "electronics_electrical"),
-        ("What BIS standard applies to packaged drinking water?", "food"),
+        ("What BIS standard applies to packaged drinking water?", "water"),
         ("What is BIS?", "general_bis"),
         ("What standards should a manufacturer check before producing?", "industry"),
         ("Which wire should I use for house wiring?", "electronics_electrical"),
@@ -95,7 +108,7 @@ def test_category_detection_siH_scenarios(query, expected):
 def test_detection_extracts_standard_numbers():
     u = understand_query("What does IS 14543 require?")
     assert u.standard_number == "IS 14543"
-    assert u.category == "food"
+    assert u.category in ("water", "food")
     assert u.product_name == "Packaged Drinking Water"
 
 

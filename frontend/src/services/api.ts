@@ -21,6 +21,8 @@ export interface Citation {
   category: string;
   year: number | null;
   snippet: string;
+  source_name?: string;
+  source_type?: string;
 }
 
 export interface ChatResponse {
@@ -192,6 +194,49 @@ export interface RagDebugTrace {
   rerank_top_n: number;
 }
 
+// ---- AI Product Identifier -------------------------------------------------
+export interface PossibleProduct {
+  name: string;
+  confidence: number;
+}
+
+export interface IdentifiedProduct {
+  name: string;
+  category: string;
+  confidence: number;
+  product_type: string;
+  brand: string;
+  model: string;
+  specifications: string[];
+  markings: string[];
+  packaging_info: string;
+  possible_matches: PossibleProduct[];
+}
+
+export interface StandardRecommendation {
+  is_number: string;
+  title: string;
+  relevance: string;
+  evidence: string;
+  source: string;
+  source_url: string;
+  document_id: number;
+  page: number;
+  section: string;
+  category: string;
+  confidence: number;
+  match_level: "strong" | "moderate" | "weak";
+}
+
+export interface ProductIdentificationResponse {
+  product: IdentifiedProduct;
+  standards: StandardRecommendation[];
+  warnings: string[];
+  needs_verification: boolean;
+  query_used: string;
+  llm_provider: string;
+}
+
 /**
  * API base URL.
  * - unset/empty  → same-origin (Vite dev proxy locally, or backend-served SPA)
@@ -291,6 +336,22 @@ export const api = {
   document: (id: number) => request<DocumentOut>(`/api/documents/${id}`),
   documentFileUrl: (id: number, page?: number) =>
     `${BASE}/api/documents/${id}/file${page ? `?page=${page}` : ""}`,
+  /**
+   * URL for opening a stored PDF in a NEW BROWSER TAB.
+   *
+   * Tab navigation cannot send an Authorization header, so the SPA first
+   * mints a short-lived, document-scoped token and appends it as a query
+   * param. The backend responds with Content-Type: application/pdf.
+   */
+  documentFileTokenUrl: async (id: number, page?: number) => {
+    const { token } = await request<{ token: string; expires_in: number }>(
+      `/api/documents/${id}/file-token`,
+      { method: "POST" }
+    );
+    return `${BASE}/api/documents/${id}/file?token=${encodeURIComponent(token)}${
+      page ? `#page=${page}` : ""
+    }`;
+  },
   uploadDocument: (form: FormData) =>
     request<DocumentOut>("/api/documents/upload", {
       method: "POST",
@@ -335,6 +396,25 @@ export const api = {
       `/api/knowledge/debug/retrieval?q=${encodeURIComponent(q)}`
     ),
 
+  // ---- AI Product Identifier ------------------------------------------------
+  identifyProduct: (image: File, description = "") => {
+    const form = new FormData();
+    form.append("image", image);
+    form.append("description", description);
+    return request<ProductIdentificationResponse>("/api/product-identification", {
+      method: "POST",
+      body: form,
+    });
+  },
+  matchProduct: (productName: string, category = "") =>
+    request<ProductIdentificationResponse>(
+      "/api/product-identification/match-standard",
+      {
+        method: "POST",
+        body: JSON.stringify({ product_name: productName, category }),
+      }
+    ),
+
   // ---- misc ---------------------------------------------------------------
   feedback: (messageId: number, rating: 1 | -1, comment = "") =>
     request<{ id: number }>("/api/feedback", {
@@ -347,6 +427,33 @@ export const api = {
       "/api/config"
     ),
 };
+
+/**
+ * Open a stored document PDF in a NEW BROWSER TAB (citation "View Source").
+ *
+ * Tab navigation cannot send an Authorization header, so a short-lived,
+ * document-scoped token is minted first and appended as a query param; the
+ * backend serves the file with Content-Type: application/pdf and an inline
+ * Content-Disposition, so the browser renders the real PDF.
+ *
+ * On failure (network error, expired session, file missing) the user gets a
+ * visible "Source unavailable" notice instead of a blank/black tab.
+ */
+export async function openDocumentPdf(id: number, page?: number): Promise<void> {
+  let url: string;
+  try {
+    url = await api.documentFileTokenUrl(id, page);
+  } catch {
+    // Minting failed (offline / 401 / backend down). Surface a real message
+    // in this tab rather than opening a blank one.
+    window.alert(
+      "Source unavailable — the document could not be opened right now.\n" +
+        "Please make sure you are logged in and try again."
+    );
+    return;
+  }
+  window.open(url, "_blank", "noopener,noreferrer");
+}
 
 /** Stream chat via SSE. Calls onDelta with each text piece; resolves with final payload. */
 export async function streamChat(

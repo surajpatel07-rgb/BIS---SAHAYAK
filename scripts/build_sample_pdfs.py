@@ -440,6 +440,234 @@ def build_pdf(path: Path, title: str, pages: list[tuple[str, str]], sample_notic
     doc.close()
 
 
+DOCS.extend([
+    {
+        "file": "sample_water_quality_guide.pdf",
+        "name": "Drinking Water Quality — BIS Standards & Testing (SAMPLE)",
+        "title": "Drinking Water Quality, Testing and BIS Certification — Reference Guide (Sample)",
+        "year": 2024,
+        "doc_type": "guide",
+        "category": "water",
+        "source_url": "",
+        "pages": [
+            ("1. SCOPE OF THIS GUIDE",
+             "This guide explains, for consumers and small businesses, how Indian Standards "
+             "relate to packaged drinking water, packaged natural mineral water and the "
+             "testing of water quality. It is a training aid and not an official BIS document. "
+             "Always verify current requirements on the official BIS source."),
+            ("2. PACKAGED DRINKING WATER vs NATURAL MINERAL WATER",
+             "Packaged drinking water is treated water from any source, packed for sale, and is "
+             "covered by IS 14543 (Packaged Drinking Water, Other than Packaged Natural Mineral "
+             "Water). Packaged natural mineral water is water from a protected underground "
+             "source and is covered by IS 13428 (Packaged Natural Mineral Water). The two are "
+             "different products with different standards: mineral water must not be treated to "
+             "alter its essential mineral character, while packaged drinking water may be "
+             "treated by filtration, reverse osmosis, disinfection and similar processes. Both "
+             "products have been under mandatory BIS certification through Quality Control "
+             "Orders. Verify the latest status on the official BIS source."),
+            ("3. BIS CERTIFICATION AND MARKING",
+             "Under the certification scheme the manufacturer operates under a BIS licence and "
+             "the bottles or packs carry the ISI mark together with the licence number (CM/L), "
+             "the IS standard number, batch identification and the manufacturing date. Consumers "
+             "should check the ISI mark, the licence number, the type of water declared on the "
+             "label (packaged drinking water or natural mineral water) and the best-before date "
+             "before purchase. Product sold without the required mark should not be accepted."),
+            ("4. WATER QUALITY REQUIREMENTS AND TESTING",
+             "Water quality is assessed for physical, chemical and microbiological parameters. "
+             "Test methods for water and wastewater are covered by the IS 3025 series (Methods "
+             "of Sampling and Test, Physical and Chemical), which is used part by part for "
+             "parameters such as pH, turbidity, total dissolved solids and residual chlorine. "
+             "Microbiological requirements (for example absence of coliform bacteria and faecal "
+             "streptococci) form part of the packaged water standards. Sampling procedures for "
+             "water analysis are described in IS 3025 Part 1. Drinking-water acceptability "
+             "criteria for public supplies are specified in IS 10500 (Drinking Water)."),
+            ("5. LABORATORY TESTING AND CONSUMER TIPS",
+             "Water testing should be done by laboratories that follow the relevant IS 3025 "
+             "test methods. For packaged water, consumers cannot test at home: rely on the BIS "
+             "mark, intact seals, clear labelling and purchase before the best-before date. For "
+             "borewell or municipal supply, a laboratory test report should state the parameter, "
+             "the result, the unit, the method used (IS 3025 part) and the acceptable limit "
+             "referenced. If a packaged water product does not carry the required BIS mark, "
+             "consumers may report it through the official BIS complaint channels."),
+        ],
+    },
+    {
+        "file": "sample_food_packaging_guide.pdf",
+        "name": "Food Packaging & Food-Contact Materials — BIS Guide (SAMPLE)",
+        "title": "Food Packaging and Food-Contact Materials — BIS Standards Guide (Sample)",
+        "year": 2024,
+        "doc_type": "guide",
+        "category": "packaging",
+        "source_url": "",
+        "pages": [
+            ("1. SCOPE OF THIS GUIDE",
+             "This guide summarises how Indian Standards relate to packaging that touches food: "
+             "plastics, glass, metal containers and paper or board, together with labelling and "
+             "marking expectations. It is a training aid, not an official BIS publication."),
+            ("2. PLASTIC PACKAGING AND FOOD CONTACT",
+             "Materials intended for contact with foodstuffs are addressed by IS 9833 (Positive "
+             "List of Plastics and Materials in Contact with Foodstuffs) and related "
+             "specifications for polyethylene, polypropylene, PET and polystyrene containers. "
+             "The positive-list approach means only listed polymers and additives may be used. "
+             "Consumers should look for a food-grade or food-safe declaration and use the "
+             "container only for the temperature range stated by the maker."),
+            ("3. GLASS, METAL AND PAPER PACKAGING",
+             "Glass containers for food products are covered by Indian Standards for glass "
+             "tumbler and bottle requirements; metal containers for processed food (cans) have "
+             "specifications covering lacquer/coating inside the can; paper and board for food "
+             "packaging (cartons, paper cups) have specifications covering food-contact quality. "
+             "The key consumer check is that the package is intact, clean and declared suitable "
+             "for food contact by the manufacturer."),
+            ("4. LABELLING AND MARKING ON PACKAGES",
+             "Packaged food labels must declare the product name, ingredients in descending "
+             "order, net quantity, lot or batch number, manufacturing date, best-before or use-"
+             "by date, storage instructions, the FSSAI licence number and the veg or non-veg "
+             "symbol as applicable. Where a product carries BIS certification, the ISI mark and "
+             "licence number also appear on the package. Legal metrology rules require the "
+             "maker or packer name and the net quantity declaration to be prominent."),
+            ("5. WHAT CONSUMERS SHOULD CHECK",
+             "Before buying packaged food: check the seal integrity, the best-before date, the "
+             "batch number, the storage conditions and, where BIS certification applies, the "
+             "ISI mark with the CM/L licence number. For reusable containers at home, avoid "
+             "heating food in containers not declared microwave-safe, and retire scratched or "
+             "discoloured plastic containers."),
+        ],
+    },
+    {
+        "file": "sample_hallmark_verification_guide.pdf",
+        "name": "How to Verify a BIS Hallmark — Step-by-Step Consumer Guide (SAMPLE)",
+        "title": "Verifying BIS Hallmarks on Gold and Silver Jewellery — Consumer Guide (Sample)",
+        "year": 2024,
+        "doc_type": "guide",
+        "category": "hallmarking",
+        "source_url": "",
+        "pages": [
+            ("1. WHY VERIFY A HALLMARK",
+             "The BIS hallmark is the consumer's primary assurance that the fineness (purity) "
+             "declared on a jewellery item was assayed by a BIS-recognised Assaying and "
+             "Hallmarking Centre. Verification protects buyers from under-caratage and "
+             "misdeclared purity. This guide is a training aid; official requirements are "
+             "published by BIS."),
+            ("2. THE FIVE COMPONENTS OF A BIS HALLMARK",
+             "A full BIS hallmark on a jewellery item consists of: (1) the BIS standard mark "
+             "(the BIS logo); (2) the fineness grade, for example 999 for 24K equivalent, 916 "
+             "for 22K, 875 for 21K, 750 for 18K and 585 for 14K gold, and 925 for sterling "
+             "silver; (3) the mark of the BIS-recognised Assaying and Hallmarking Centre; "
+             "(4) the jeweller's or manufacturer's identification mark; and (5) the HUID - a "
+             "six-digit alphanumeric unique identification code laser-marked on the item."),
+            ("3. STEP-BY-STEP CONSUMER VERIFICATION",
+             "Step 1: look for the BIS logo on the item. Step 2: read the fineness number and "
+             "confirm it matches what the bill declares (916 means 22K). Step 3: locate the HUID "
+             "six-character code. Step 4: open the official BIS Care mobile application or the "
+             "BIS website verify facility, enter the HUID and confirm that the returned details "
+             "(jeweller, centre, fineness) match the item. Step 5: check the purchase invoice "
+             "mentions the hallmarking details. If any component is missing or the HUID does not "
+             "verify, decline the purchase or demand an explanation from the jeweller."),
+            ("4. HALLMARKING CENTRES AND FINENESS RULES",
+             "Only BIS-recognised Assaying and Hallmarking Centres may apply the hallmark. The "
+             "centres sample and assay jewellery lots to confirm the declared fineness before "
+             "marking. Fineness grades in use for gold include 999, 916, 875, 750 and 585; for "
+             "silver, common grades are 999, 958, 925, 900 and 800 as applicable under the "
+             "relevant Indian Standards (IS 1417 for gold, IS 2112 for silver marking). The "
+             "hallmarking of gold jewellery and artefacts has been made mandatory in phases "
+             "through government orders; the current coverage and exemptions should be verified "
+             "on the official BIS source."),
+            ("5. WHAT A HALLMARK DOES NOT GUARANTEE",
+             "The hallmark attests the fineness of the metal at the time of assaying. It is not "
+             "a certificate for the weight of stones, the making charges, the design originality "
+             "or the buy-back value offered by a jeweller. Consumers should also keep the "
+             "invoice, because it links the item to the declared hallmark details. For disputes, "
+             "BIS complaint channels and consumer forums are the appropriate escalation paths."),
+        ],
+    },
+    {
+        "file": "sample_bis_services_guide.pdf",
+        "name": "BIS Services, Schemes and Consumer Channels — Overview (SAMPLE)",
+        "title": "BIS Services, Certification Schemes and Consumer Channels — Overview (Sample)",
+        "year": 2024,
+        "doc_type": "guide",
+        "category": "general_bis",
+        "source_url": "",
+        "pages": [
+            ("1. WHAT THE BUREAU OF INDIAN STANDARDS DOES",
+             "The Bureau of Indian Standards (BIS) is India's national standards body, set up "
+             "under the BIS Act 2016. It formulates Indian Standards, operates product "
+             "certification schemes (the ISI mark scheme and the Compulsory Registration Scheme), "
+             "runs the hallmarking scheme for gold and silver, manages laboratory recognition "
+             "and testing services, and provides consumer grievance and awareness channels."),
+            ("2. PRODUCT CERTIFICATION SCHEMES",
+             "The Product Certification Schemes operate through licences granted to manufacturers "
+             "whose products and factory-level quality control conform to the relevant Indian "
+             "Standard. Certified products carry the ISI mark with a CM/L licence number. The "
+             "Compulsory Registration Scheme (CRS) covers electronics and IT goods: manufacturers "
+             "register declarations of conformity and self-declare testing to the relevant "
+             "standard, and registered goods carry the BIS registration mark with an R-number. "
+             "Which products are mandatory is determined by Quality Control Orders and ministry "
+             "notifications; the current lists must be verified on the official BIS source."),
+            ("3. HALLMARKING AND TESTING SERVICES",
+             "The hallmarking scheme covers gold and silver jewellery assayed and marked by "
+             "BIS-recognised Assaying and Hallmarking Centres. BIS also operates and recognises "
+             "laboratories for testing, and laboratory recognition services for other testing "
+             "facilities. Consumers and manufacturers can use the BIS laboratories and services "
+             "through the official portals."),
+            ("4. STANDARDS DEVELOPMENT AND CONSUMER PARTICIPATION",
+             "Indian Standards are developed through technical committees with industry, "
+             "regulators, academia and consumer participation. Standards Clubs in educational "
+             "institutions, Standards National Months activities and training programmes are the "
+             "main awareness channels. MSMEs and startups can access hand-holding, registration "
+             "fee concessions and simplified application routes announced from time to time; "
+             "verify current schemes on the official BIS source."),
+            ("5. CONSUMER COMPLAINTS AND VERIFICATION CHANNELS",
+             "Consumers can report misuse of the ISI mark, unmarked mandatory products, defective "
+             "certified products and hallmarking grievances through BIS online complaint "
+             "channels, the BIS Care mobile application and the consumer grievance portal. The "
+             "BIS Care app also verifies HUID codes and licence details. For escalations, "
+             "consumer commissions under the Consumer Protection Act remain available."),
+        ],
+    },
+    {
+        "file": "sample_construction_materials_guide.pdf",
+        "name": "Construction Materials — Cement, Steel & BIS Certification (SAMPLE)",
+        "title": "BIS Certification for Construction Materials — Cement, Steel and Concrete (Sample)",
+        "year": 2024,
+        "doc_type": "guide",
+        "category": "construction",
+        "source_url": "",
+        "pages": [
+            ("1. SCOPE OF THIS GUIDE",
+             "This guide summarises how Indian Standards apply to common construction materials: "
+             "cement, reinforcing steel, structural steel and concrete practice. It is a training "
+             "aid, not an official BIS publication."),
+            ("2. CEMENT STANDARDS AND GRADES",
+             "Ordinary Portland Cement is specified by IS 269 (33 grade), IS 8112 (43 grade) and "
+             "IS 12269 (53 grade). Portland Pozzolana Cement is covered by IS 1489. Tests are "
+             "per IS 4031 (physical) and IS 4032 (chemical). Cement has long been under mandatory "
+             "BIS certification: bags carry the ISI mark, licence number, grade and week-year of "
+             "packing. Use fresh cement; strength reduces with long storage."),
+            ("3. REINFORCEMENT AND STRUCTURAL STEEL",
+             "High strength deformed reinforcement bars are covered by IS 1786; mild steel bars "
+             "by IS 432. Structural steel sections are covered by IS 2062 and related product "
+             "specifications. TMT bars for buildings are commonly certified against IS 1786 and "
+             "carry the ISI mark with grade marking (for example Fe 500 or Fe 550D). Check the "
+             "grade marking on every bar and the manufacturer's test certificate for the lot."),
+            ("4. CONCRETE AND SITE QUALITY CHECKS",
+             "Concrete design and construction practice is covered by IS 456 (Plain and "
+             "Reinforced Concrete - Code of Practice) and concrete admixtures by IS 9103. Site "
+             "checks include slump testing of fresh concrete, cube testing for compressive "
+             "strength at 7 and 28 days, and curing practice per the code. Materials arriving on "
+             "site should match the specified Indian Standard and carry the required marks."),
+            ("5. BUYER AND BUILDER CHECKLIST",
+             "For cement: verify the ISI mark, licence number, grade and packing week. For steel: "
+             "verify the grade embossing, manufacturer's test certificate and ISI mark where "
+             "certification applies. For ready-mix concrete: ask for the mix design, the IS 456 "
+             "compliance statement and cube test reports. Mandatory certification coverage "
+             "changes through Quality Control Orders; verify the current list on the official "
+             "BIS source before procurement."),
+        ],
+    },
+])
+
+
 def main() -> None:
     SAMPLE_DIR.mkdir(parents=True, exist_ok=True)
     for spec in DOCS:

@@ -43,23 +43,60 @@ CATEGORIES: dict[str, KnowledgeCategory] = {c.key: c for c in [
         emoji="🍚",
         description="Packaged food, drinking water, dairy, oils, spices, cereals and food-contact materials.",
         keywords=(
-            "food", "packaged food", "drinking water", "mineral water", "water bottle",
-            "bottled water", "milk", "dairy", "ghee", "butter", "paneer", "curd",
+            "food", "packaged food", "milk", "dairy", "ghee", "butter", "paneer", "curd",
             "edible oil", "mustard oil", "coconut oil", "refined oil", "spice", "spices",
             "turmeric", "chilli powder", "coriander powder", "cereal", "grain", "wheat",
             "rice", "atta", "flour", "maida", "suji", "rava", "besan", "pulse", "dal",
             "sugar", "jaggery", "honey", "salt", "tea", "coffee", "juice", "beverage",
-            "packaging", "food container", "food grade", "kitchen", "tiffin", "lunch box",
-            "processed food", "snack", "biscuit", "noodle", "fssai",
+            "food grade", "kitchen", "processed food", "snack", "biscuit", "bread",
+            "noodle", "fssai", "additive", "food additive",
             # Hindi (translit + Devanagari)
-            "khadya", "paani", "peene ka paani", "doodh", "dahi", "tel", "masala", "atta",
-            "cheeni", "shakkar",
-            "खाद्य", "पानी", "पेय", "दूध", "तेल", "मसाला", "आटा", "चीनी", "खाद्य तेल",
+            "khadya", "doodh", "dahi", "tel", "masala", "atta", "cheeni", "shakkar",
+            "खाद्य", "पेय", "दूध", "तेल", "मसाला", "आटा", "चीनी", "खाद्य तेल",
         ),
         related_question_templates=(
             "Is BIS certification mandatory or voluntary for this product?",
             "What should I look for on the package before buying?",
             "Which authority regulates this product besides BIS?",
+        ),
+    ),
+    KnowledgeCategory(
+        key="water",
+        label="Drinking Water",
+        emoji="💧",
+        description="Packaged drinking water, natural mineral water, water quality, sampling, microbiological and chemical testing requirements.",
+        keywords=(
+            "packaged drinking water", "mineral water", "natural mineral water",
+            "drinking water", "water bottle", "bottled water", "water quality",
+            "water testing", "water standard", "potable water", "bis water",
+            "microbiological", "chemical requirements", "sampling",
+            "is 14543", "is 13428", "is 10500", "is 3025",
+            # Hindi
+            "paani", "peene ka paani", "पानी", "पीने का पानी", "बोतलबंद पानी",
+        ),
+        related_question_templates=(
+            "Is BIS certification mandatory for packaged drinking water?",
+            "What is the difference between packaged drinking water and natural mineral water?",
+            "What should I check on a water bottle label before buying?",
+        ),
+    ),
+    KnowledgeCategory(
+        key="packaging",
+        label="Food & Product Packaging",
+        emoji="📦",
+        description="Food-contact materials and packaging: plastics, glass, metal containers, paper/board, labelling and marking requirements.",
+        keywords=(
+            "packaging", "food packaging", "food container", "food contact",
+            "plastic packaging", "glass packaging", "metal container", "paper board",
+            "carton", "pet bottle", "jute sack", "plastic film", "label", "labelling",
+            "labeling", "marking requirements", "tiffin", "lunch box", "thermoware",
+            # Hindi
+            "पैकेजिंग", "डिब्बा", "बोतल",
+        ),
+        related_question_templates=(
+            "What should I check for food-grade packaging marks?",
+            "Which BIS standards apply to plastic food containers?",
+            "What labelling information is required on packaged food?",
         ),
     ),
     KnowledgeCategory(
@@ -112,18 +149,36 @@ CATEGORIES: dict[str, KnowledgeCategory] = {c.key: c for c in [
         description="Helmets, pressure cookers, LPG cylinders, toys, cement, steel and other household items.",
         keywords=(
             "helmet", "helmets", "pressure cooker", "cooker", "lpg", "cylinder",
-            "gas cylinder", "toy", "toys", "cement", "concrete", "steel", "tmt",
-            "reinforcement", "footwear", "shoes", "sandals", "furniture", "chair",
-            "table", "bucket", "container", "household", "kitchenware", "utensil",
+            "gas cylinder", "toy", "toys", "footwear", "shoes", "sandals",
+            "furniture", "chair", "table", "bucket", "household", "kitchenware",
+            "utensil", "cookware", "mattress", "textile", "personal use",
             "lock", "hinges", "tap", "pipe", "tank", "umbrella", "matchbox",
             "agarbatti", "helmet isi", "safety helmet", "two wheeler",
             # Hindi
-            "हेलमेट", "कुकर", "सिलेंडर", "खिलौना", "सीमेंट", "सरिया", "लोहा",
+            "हेलमेट", "कुकर", "सिलेंडर", "खिलौना", "सरिया", "लोहा",
         ),
         related_question_templates=(
             "Is the ISI mark mandatory for this product?",
             "How do I verify the ISI mark on the product or packaging?",
             "What should I check before buying this product?",
+        ),
+    ),
+    KnowledgeCategory(
+        key="construction",
+        label="Construction & Building Materials",
+        emoji="🧱",
+        description="Cement, steel, reinforcement bars, concrete, building materials and related testing requirements.",
+        keywords=(
+            "cement", "portland cement", "concrete", "steel", "tmt", "reinforcement",
+            "rebar", "building material", "construction", "bricks", "blocks",
+            "vitrified tile", "tiles", "sanitary ware", "pvc pipe", "cpvc",
+            # Hindi
+            "सीमेंट", "निर्माण", "ईंट",
+        ),
+        related_question_templates=(
+            "Which BIS standard applies to this construction material?",
+            "Is BIS certification mandatory for cement?",
+            "How is cement tested for strength and setting time?",
         ),
     ),
     KnowledgeCategory(
@@ -171,6 +226,27 @@ CATEGORIES: dict[str, KnowledgeCategory] = {c.key: c for c in [
     ),
 ]}
 
+# Categories whose documents often also answer questions detected in a
+# neighbouring category (used to widen the metadata filter, see retrieval).
+RELATED_CATEGORIES: dict[str, tuple[str, ...]] = {
+    "food": ("water", "packaging"),
+    "water": ("food", "packaging"),
+    "packaging": ("food", "water"),
+    "hallmarking": ("general_bis",),
+    "everyday_products": ("construction", "electronics_electrical"),
+    "construction": ("everyday_products",),
+    "electronics_electrical": ("everyday_products",),
+    "general_bis": ("industry",),
+    "industry": ("general_bis",),
+}
+
+
+def related_categories_for(category_key: str) -> list[str]:
+    """Canonical neighbours for a category (used to widen metadata filters)."""
+    key = normalize_category(category_key)
+    return [k for k in RELATED_CATEGORIES.get(key, ()) if k in CATEGORIES]
+
+
 # Legacy category values already present in the DB are mapped to the new keys.
 LEGACY_CATEGORY_MAP = {
     "cement": "everyday_products",
@@ -196,7 +272,12 @@ def normalize_category(raw: str | None) -> str:
         "everyday": "everyday_products",
         "everyday_product": "everyday_products",
         "hallmark": "hallmarking",
+        "gold_silver": "hallmarking",
+        "gold_and_silver": "hallmarking",
+        "household": "everyday_products",
+        "consumer_products": "everyday_products",
         "food_and_water": "food",
+        "water_quality": "water",
     }
     if v in aliases:
         return aliases[v]
@@ -234,7 +315,7 @@ PRODUCTS: list[Product] = [
     # ---------------- FOOD ----------------
     Product(
         name="Packaged Drinking Water",
-        category="food",
+        category="water",
         subcategory="Water",
         aliases=("packaged drinking water", "bottled water", "water bottle", "drinking water", "paani"),
         standard_number="IS 14543",
@@ -251,7 +332,7 @@ PRODUCTS: list[Product] = [
     ),
     Product(
         name="Packaged Natural Mineral Water",
-        category="food",
+        category="water",
         subcategory="Water",
         aliases=("mineral water", "natural mineral water"),
         standard_number="IS 13428",
@@ -263,6 +344,35 @@ PRODUCTS: list[Product] = [
             "Natural mineral water must come from a protected underground source named on the label.",
         ),
         notes="Certification has been mandatory under a Quality Control Order. Verify the latest status on the official BIS source.",
+    ),
+    Product(
+        name="Water Quality Testing and Sampling",
+        category="water",
+        subcategory="Testing",
+        aliases=("water testing", "water quality", "sampling of water", "water analysis", "potability test"),
+        standard_number="IS 3025",
+        standard_title="Methods of Sampling and Test (Physical and Chemical) for Water and Wastewater (Part 1 and onwards)",
+        certification_status="voluntary",
+        scheme="",
+        consumer_checklist=(
+            "Ask any water-testing lab which IS 3025 part the analysis was done per.",
+            "Drinking-water acceptability limits are specified separately (see the drinking-water quality guidance).",
+        ),
+        notes="IS 3025 is a test-method series (not a product certification): laboratories use it to analyse water quality part by part (pH, turbidity, microbiological parameters, etc.).",
+    ),
+    Product(
+        name="Silver Jewellery Hallmarking",
+        category="hallmarking",
+        subcategory="Hallmarking",
+        aliases=("silver", "silver jewellery", "chaandi", "chandi", "silver hallmark", "925", "sterling"),
+        standard_number="IS 2112",
+        standard_title="Silver and Silver Alloys, Jewellery/Artefacts — Fineness and Marking",
+        certification_status="scheme-specific",
+        scheme="HALLMARK",
+        consumer_checklist=(
+            "Look for the BIS hallmark with the fineness grade (e.g. 925 for sterling silver).",
+            "Verify the HUID on the official BIS Care app before purchase.",
+        ),
     ),
     Product(
         name="Wheat Flour (Atta)",
@@ -302,7 +412,7 @@ PRODUCTS: list[Product] = [
     ),
     Product(
         name="Food-Grade Plastics & Containers",
-        category="food",
+        category="packaging",
         subcategory="Food Contact Materials",
         aliases=("food container", "tiffin", "lunch box", "plastic container", "food grade plastic", "packaging"),
         standard_number="IS 9833",
@@ -560,8 +670,8 @@ PRODUCTS: list[Product] = [
     ),
     Product(
         name="Ordinary Portland Cement",
-        category="everyday_products",
-        subcategory="Construction",
+        category="construction",
+        subcategory="Cement",
         aliases=("cement", "opc", "portland cement", "bora", "simint"),
         standard_number="IS 269",
         standard_title="Ordinary Portland Cement — Specification (33 grade; see also IS 8112 for 43 grade and IS 12269 for 53 grade)",

@@ -65,22 +65,49 @@ DECIDING BETWEEN MODES:
 that the indexed documents do not yet cover the topic.
 - General, everyday question -> MODE B regardless of what was retrieved.
 
-OUTPUT FORMAT:
-- Answer directly, in clear prose and short bullets. Keep the answer under 350 words \
-unless asked for detail.
+OUTPUT FORMAT (structure every answer so it is easy to scan):
+- Start with the heading "### Short Answer" followed by 1-3 direct sentences that answer \
+the question.
+- Then add "### Key Points" with 2-5 bullets. Begin each bullet with a **bold lead phrase** \
+followed by the explanation.
+- When the retrieved context identifies a specific standard for the question, add \
+"### BIS Standard" listing **IS Number**, **Title** and **Why it is relevant** — using ONLY \
+standard numbers/titles that appear in the retrieved context. Never invent one.
+- When the context states concrete requirements, add "### Important Requirements" as a \
+numbered list with **bold requirement names**.
+- Use markdown-style **bold** for important terms, IS numbers, standard titles, warnings \
+and required actions — but never make whole paragraphs bold. Keep paragraphs short \
+(2-3 sentences). Use bullet/numbered lists instead of long prose.
+- Length: simple questions get concise answers; technical BIS questions get enough \
+explanation, requirements and sources — without repeating the same information.
+- End factual BIS answers with a "### Sources" line listing the [n] markers used.
 - MODE A only: immediately after any sentence(s) that rely on a specific retrieved chunk, \
 append its citation marker in square brackets, e.g. [1] or [2][3]. Every MODE A answer \
 MUST include at least one [n] citation marker — an answer stating BIS facts with zero \
 [n] markers is a failure.
 - MODE B only: begin the reply with the exact line [GENERAL ANSWER] on its own, then the \
-answer. Never append [n] markers, because no retrieved document is being quoted."""
+answer (still formatted with the headings above where they fit). Never append [n] \
+markers, because no retrieved document is being quoted.
+
+WHEN EVIDENCE IS INSUFFICIENT (MODE A only — the question is BIS-specific but the \
+retrieved context does not cover it): reply exactly with:
+"I couldn't find sufficient evidence in the current BIS knowledge base to answer this \
+confidently." followed by the suggestion line "Try searching the BIS Knowledge Base or \
+provide the product name/details." Do NOT invent standard numbers, requirements, fees \
+or rules to fill the gap."""
 
 
 class LLMError(Exception):
     """Raised when the LLM provider fails."""
 
 
-REFUSAL_PHRASE = "could not find sufficient information"
+REFUSAL_PHRASES = (
+    "could not find sufficient information",  # legacy wording (old chats)
+    "couldn't find sufficient evidence",  # current wording
+)
+# Keep the old name as the primary phrase for backwards-compatible imports.
+REFUSAL_PHRASE = REFUSAL_PHRASES[1]
+SUGGESTION_LINE = "Try searching the BIS Knowledge Base or provide the product name/details."
 
 # Marker emitted by the LLM for MODE B (general-knowledge) answers in hybrid mode.
 # The chat pipeline strips it before saving/streaming and skips citation resolution
@@ -102,7 +129,7 @@ def ensure_citations(answer: str, n_chunks: int) -> str:
     lowered = answer.lower()
     if (
         n_chunks <= 0
-        or REFUSAL_PHRASE in lowered
+        or any(p in lowered for p in REFUSAL_PHRASES)
         or GENERAL_MARKER.lower() in lowered
     ):
         return answer
@@ -228,9 +255,8 @@ class FallbackLLMProvider(BaseLLMProvider):
             )
         if not blocks:
             return (
-                "I could not find sufficient information in the indexed BIS documents "
-                "to answer this reliably. Please try rephrasing, or ask an administrator "
-                "to index the relevant standard."
+                REFUSAL_PHRASE.rstrip(".") + " in the current BIS knowledge base "
+                "to answer this confidently.\n\n" + SUGGESTION_LINE
             )
 
         # Rank sentences from each block by query-term overlap
@@ -274,16 +300,30 @@ class FallbackLLMProvider(BaseLLMProvider):
             q_tokens and len(q_tokens) >= 2 and best_sentence_overlap < 2
         ):
             return (
-                "I could not find sufficient information in the indexed BIS documents "
-                "to answer this reliably."
+                REFUSAL_PHRASE.rstrip(".") + " in the current BIS knowledge base "
+                "to answer this confidently.\n\n" + SUGGESTION_LINE
             )
 
-        lines = [f"- {s} [{m}]" for m, s in picked[:6]]
+        # Structured extractive answer: Short Answer → Key Points → Sources.
+        def _ref(n: int) -> str:
+            return f"[{n}]"
+
+        top_marker, top_sentence = picked[0]
+        short_answer = top_sentence.strip().rstrip(".") + "."
+        key_points = [f"- **{s.strip().rstrip('.')}.** { _ref(m) }" for m, s in picked[1:6]]
+
         header = (
-            "Based on the indexed BIS documents (development mode: extractive answer, "
-            "configure GEMINI_API_KEY for full generative answers):"
+            "### Short Answer\n\n"
+            "(Development mode: extractive answer from the indexed BIS documents — "
+            "configure GEMINI_API_KEY for full generative answers.)\n\n"
+            f"{short_answer} {_ref(top_marker)}\n\n"
         )
-        return header + "\n" + "\n".join(lines)
+        if key_points:
+            header += "### Key Points\n\n" + "\n".join(key_points) + "\n\n"
+        header += "### Sources\n\n" + "".join(
+            f"[{m}]" for m, _ in picked[: min(3, len(picked))]
+        )
+        return header
 
 
 def get_llm_provider() -> BaseLLMProvider:

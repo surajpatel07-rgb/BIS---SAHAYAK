@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useLocation, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -14,7 +14,7 @@ import {
   ThumbsUp,
   User,
 } from "lucide-react";
-import { api, streamChat, type Citation } from "../services/api";
+import { api, openDocumentPdf, streamChat, type Citation } from "../services/api";
 import { useAuth } from "../context/AuthContext";
 
 interface UiMessage {
@@ -60,76 +60,178 @@ const SUGGESTIONS: Record<string, string[]> = {
   consumer: [
     "What should I know about BIS standards for packaged drinking water?",
     "What is HUID and why is it useful?",
-    "What should I check before buying an electrical product?",
+    "How can I verify a hallmark on gold jewellery?",
+    "What should I check on food packaging before buying?",
     "What should I check before buying a pressure cooker?",
   ],
   industry: [
     "What standards and requirements should I check before manufacturing cement?",
     "How can I get BIS certification for my factory?",
     "What documents are required for the BIS licence application?",
-    "What is the Scheme of Testing and Inspection?",
+    "What BIS requirements apply to electrical cables?",
+    "What is the Compulsory Registration Scheme (CRS)?",
   ],
 };
 
-/** Renders answer text, converting [n] markers into clickable citation chips. */
-function AnswerWithCitations({
+// ----------------------------------------------------------------------------
+// Lightweight markdown-subset renderer for structured answers.
+// Supports: ### headings, **bold**, - bullets, 1. numbered items, and [n]
+// citation chips that open the real source PDF. Everything else renders as
+// plain paragraphs. No external markdown dependency, no HTML injection.
+// ----------------------------------------------------------------------------
+function renderInline(text: string, sources: Citation[], keyPrefix: string) {
+  // Split on **bold** and [n] markers in one pass.
+  const nodes: React.ReactNode[] = [];
+  const re = /\*\*(.+?)\*\*|\[(\d{1,2})\]/g;
+  let last = 0;
+  let m: RegExpExecArray | null;
+  let k = 0;
+  while ((m = re.exec(text))) {
+    if (m.index > last) nodes.push(text.slice(last, m.index));
+    if (m[1] !== undefined) {
+      nodes.push(
+        <strong key={`${keyPrefix}-b${k++}`} className="font-semibold text-slate-900">
+          {m[1]}
+        </strong>
+      );
+    } else {
+      const idx = Number(m[2]);
+      const c = sources[idx - 1];
+      if (c) {
+        nodes.push(
+          <button
+            key={`${keyPrefix}-c${k++}`}
+            onClick={() => openDocumentPdf(c.document_id, c.page)}
+            title={`Open ${c.document_name} — page ${c.page} (PDF)`}
+            className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-brand-100 px-1 align-baseline text-[11px] font-bold text-brand-700 hover:bg-brand-500 hover:text-white"
+          >
+            {idx}
+          </button>
+        );
+      } else {
+        nodes.push(`[${idx}]`);
+      }
+    }
+    last = m.index + m[0].length;
+  }
+  if (last < text.length) nodes.push(text.slice(last));
+  return nodes;
+}
+
+function StructuredAnswer({
   content,
   sources,
-  onCitationClick,
 }: {
   content: string;
   sources: Citation[];
-  onCitationClick: (c: Citation) => void;
 }) {
-  const parts = useMemo(() => {
-    const out: { type: "text" | "cite"; value: string | number }[] = [];
-    const re = /\[(\d{1,2})\]/g;
-    let last = 0;
-    let m: RegExpExecArray | null;
-    while ((m = re.exec(content))) {
-      if (m.index > last) out.push({ type: "text", value: content.slice(last, m.index) });
-      out.push({ type: "cite", value: Number(m[1]) });
-      last = m.index + m[0].length;
+  const blocks = useMemo(() => {
+    const lines = content.replace(/\r\n/g, "\n").split("\n");
+    type Block =
+      | { kind: "h"; text: string }
+      | { kind: "p"; text: string }
+      | { kind: "ul"; items: string[] }
+      | { kind: "ol"; items: string[] };
+    const out: Block[] = [];
+    let para: string[] = [];
+    let list: { kind: "ul" | "ol"; items: string[] } | null = null;
+    const flushPara = () => {
+      if (para.length) {
+        out.push({ kind: "p", text: para.join(" ") });
+        para = [];
+      }
+    };
+    const flushList = () => {
+      if (list) {
+        out.push(list);
+        list = null;
+      }
+    };
+    for (const raw of lines) {
+      const line = raw.trimEnd();
+      if (!line.trim()) {
+        flushPara();
+        flushList();
+        continue;
+      }
+      const h = line.match(/^#{1,4}\s+(.*)$/);
+      const ul = line.match(/^[-*]\s+(.*)$/);
+      const ol = line.match(/^(\d{1,2})[.)]\s+(.*)$/);
+      if (h) {
+        flushPara();
+        flushList();
+        out.push({ kind: "h", text: h[1] });
+      } else if (ul) {
+        flushPara();
+        if (!list || list.kind !== "ul") {
+          flushList();
+          list = { kind: "ul", items: [] };
+        }
+        list.items.push(ul[1]);
+      } else if (ol) {
+        flushPara();
+        if (!list || list.kind !== "ol") {
+          flushList();
+          list = { kind: "ol", items: [] };
+        }
+        list.items.push(ol[2]);
+      } else {
+        flushList();
+        para.push(line.trim());
+      }
     }
-    if (last < content.length) out.push({ type: "text", value: content.slice(last) });
+    flushPara();
+    flushList();
     return out;
   }, [content]);
 
   return (
-    <div className="space-y-1.5 whitespace-pre-wrap leading-relaxed">
-      {parts.map((p, i) =>
-        p.type === "text" ? (
-          <span key={i}>{p.value}</span>
-        ) : (
-          (() => {
-            const idx = p.value as number;
-            const c = sources[idx - 1];
-            if (!c) return <span key={i}>[{idx}]</span>;
-            return (
-              <button
-                key={i}
-                onClick={() => onCitationClick(c)}
-                title={`${c.document_name} — page ${c.page}${c.section ? ` · ${c.section}` : ""}`}
-                className="mx-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-brand-100 px-1 align-baseline text-[11px] font-bold text-brand-700 hover:bg-brand-500 hover:text-white"
-              >
-                {idx}
-              </button>
-            );
-          })()
-        )
-      )}
+    <div className="space-y-2 leading-relaxed">
+      {blocks.map((b, i) => {
+        if (b.kind === "h") {
+          return (
+            <p
+              key={i}
+              className="mt-3 text-[11px] font-bold uppercase tracking-wide text-brand-700 first:mt-0"
+            >
+              {b.text}
+            </p>
+          );
+        }
+        if (b.kind === "p") {
+          return <p key={i}>{renderInline(b.text, sources, `p${i}`)}</p>;
+        }
+        const ItemTag = b.kind === "ol" ? "ol" : "ul";
+        return (
+          <ItemTag
+            key={i}
+            className={`ml-5 space-y-1 ${b.kind === "ol" ? "list-decimal" : "list-disc"}`}
+          >
+            {b.items.map((it, j) => (
+              <li key={j} className="pl-1">
+                {renderInline(it, sources, `l${i}-${j}`)}
+              </li>
+            ))}
+          </ItemTag>
+        );
+      })
+      }
     </div>
   );
 }
 
 function CitationCard({ c }: { c: Citation }) {
-  const fileUrl = api.documentFileUrl(c.document_id);
+  // Opens the REAL stored PDF in a new tab via a short-lived scoped token;
+  // failures surface a "Source unavailable" message (see api.ts).
+  const isDemo = (c.source_type ?? "demo") === "demo";
   return (
     <a
-      href={`${fileUrl}#page=${c.page}`}
-      target="_blank"
-      rel="noreferrer"
-      className="block rounded-xl border bg-white p-3 transition hover:border-brand-500 hover:shadow-sm"
+      href={api.documentFileUrl(c.document_id)}
+      onClick={(e) => {
+        e.preventDefault();
+        openDocumentPdf(c.document_id, c.page);
+      }}
+      className="block cursor-pointer rounded-xl border bg-white p-3 transition hover:border-brand-500 hover:shadow-sm"
     >
       <div className="flex items-start gap-2.5">
         <FileText className="mt-0.5 h-4 w-4 shrink-0 text-brand-500" />
@@ -150,14 +252,28 @@ function CitationCard({ c }: { c: Citation }) {
               {(c.relevance_score * 100).toFixed(0)}% match
             </span>
           </div>
-        </div>        </div>
-      </a>
+          <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px]">
+            <span
+              className={`rounded px-1.5 py-0.5 font-semibold ${
+                isDemo ? "bg-amber-50 text-amber-700" : "bg-sky-50 text-sky-700"
+              }`}
+            >
+              {isDemo ? "DEMO DATA" : "OFFICIAL SOURCE"}
+            </span>
+            <span className="truncate text-slate-500">
+              {c.source_name || "Bureau of Indian Standards"}
+            </span>
+          </div>
+        </div>
+      </div>
+    </a>
   );
 }
 
 export default function ChatPage() {
   const { conversationId } = useParams();
   const { mode } = useAuth();
+  const location = useLocation();
   const [messages, setMessages] = useState<UiMessage[]>([]);
   const [input, setInput] = useState("");
   const [streaming, setStreaming] = useState(false);
@@ -194,6 +310,17 @@ export default function ChatPage() {
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamText]);
+
+  // Prefill the composer from router state (AI Product Identifier handoff,
+  // landing-page suggested questions). Cleared after use so back-nav is clean.
+  useEffect(() => {
+    const state = location.state as { prefill?: string; suggested?: string } | null;
+    const text = state?.prefill ?? state?.suggested;
+    if (text) {
+      setInput(text);
+      window.history.replaceState({}, "");
+    }
+  }, [location.state]);
 
   // Voice input via Web Speech API (graceful fallback)
   useEffect(() => {
@@ -382,13 +509,7 @@ export default function ChatPage() {
                 }`}
               >
                 {m.role === "assistant" ? (
-                  <AnswerWithCitations
-                    content={m.content}
-                    sources={m.sources ?? []}
-                    onCitationClick={() => {
-                      /* citations open via cards below + chips link out */
-                    }}
-                  />
+                  <StructuredAnswer content={m.content} sources={m.sources ?? []} />
                 ) : (
                   m.content
                 )}
@@ -402,7 +523,7 @@ export default function ChatPage() {
                 {m.role === "assistant" && (m.sources?.length ?? 0) > 0 && (
                   <div className="mt-3 border-t pt-3">
                     <div className="mb-1.5 text-[11px] font-semibold uppercase tracking-wide text-slate-400">
-                      Sources
+                      Sources & References
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       {m.sources!.map((c, i) => (
@@ -450,10 +571,9 @@ export default function ChatPage() {
             <div className="mb-4 flex justify-start">
               <div className="max-w-[92%] rounded-2xl border bg-white px-4 py-3 text-sm">
                 {streamText ? (
-                  <AnswerWithCitations
+                  <StructuredAnswer
                     content={streamText}
                     sources={lastAssistant?.sources ?? []}
-                    onCitationClick={() => {}}
                   />
                 ) : (
                   <div className="flex items-center gap-2 text-slate-400">

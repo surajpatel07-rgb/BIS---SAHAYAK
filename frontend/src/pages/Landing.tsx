@@ -2,6 +2,7 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   ArrowRight,
   Bot,
+  ScanSearch,
   Building2,
   FileSearch,
   Landmark,
@@ -47,6 +48,13 @@ export default function LandingPage() {
       title: "Ask BIS Buddy",
       desc: "Get grounded answers about Indian Standards and BIS processes with citations.",
       accent: "bg-brand-50 text-brand-600",
+    },
+    {
+      to: user ? "/identify" : "/login",
+      icon: ScanSearch,
+      title: "🔍 Identify Product from Image",
+      desc: "Upload a product photo to automatically identify the product and discover potentially applicable BIS Standards.",
+      accent: "bg-violet-50 text-violet-600",
     },
     {
       to: user ? "/documents" : "/login",
@@ -145,7 +153,7 @@ export default function LandingPage() {
 
       {/* Cards */}
       <div className="mx-auto max-w-6xl px-4 pb-16">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
           {cards.map((c) =>
             c.external ? (
               <a

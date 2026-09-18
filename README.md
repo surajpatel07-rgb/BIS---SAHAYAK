@@ -105,6 +105,7 @@ the admin UI — ingestion never pretends to succeed.
 
 - 🔐 **Auth** — register/login/logout, bcrypt + JWT, `user` and `admin` roles
 - 💬 **Grounded chat** — RAG answers with inline `[n]` citation chips
+- 🔍 **AI Product Identifier** — upload a product photo; a multimodal vision model identifies the product (name, category, brand, specs, markings, confidence) and the existing RAG pipeline retrieves *potentially applicable* BIS standards with evidence + citations. Includes possible-match disambiguation, manual fallback, low-quality-image handling, and an "Ask BIS Buddy" handoff into chat per standard. Standards never come from model memory — only from retrieved knowledge-base chunks (`POST /api/product-identification`, `POST /api/product-identification/match-standard`).
 - 📄 **Citations** — document name, standard number, page, section, relevance score; click to open the PDF at the page
 - 🗂 **Knowledge categories** — Food & Water, Gold & Silver (hallmarking), Electronics & Electrical, Everyday Products, General BIS, Industry & Manufacturing; auto-detected per query and used to filter/boost retrieval
 - 🛒 **Product explorer** — category cards → product pages with standard, certification status, consumer checklist, related documents (never invents unknown standards — shows "Information not available")

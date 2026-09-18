@@ -40,3 +40,42 @@ def decode_access_token(token: str) -> dict | None:
         return jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
     except JWTError:
         return None
+
+
+# ----------------------------------------------------------------------------
+# Short-lived scoped tokens for PDF file links
+#
+# Browser tab navigation / <iframe> / <a href> cannot send an Authorization
+# header, so citation links would otherwise hit a 401 JSON page. Instead the
+# SPA mints a short-lived signed token for ONE document and appends it as a
+# query parameter. Tokens expire quickly (FILE_TOKEN_TTL_SECONDS), carry no
+# user identity, and are only valid for their document id.
+# ----------------------------------------------------------------------------
+FILE_TOKEN_PURPOSE = "doc-file"
+FILE_TOKEN_TTL_SECONDS = 15 * 60  # 15 minutes
+
+
+def create_file_token(document_id: int) -> str:
+    now = datetime.now(timezone.utc)
+    payload = {
+        "sub": "doc-file",
+        "purpose": FILE_TOKEN_PURPOSE,
+        "doc": document_id,
+        "iat": now,
+        "exp": now + timedelta(seconds=FILE_TOKEN_TTL_SECONDS),
+    }
+    return jwt.encode(payload, settings.secret_key, algorithm=ALGORITHM)
+
+
+def decode_file_token(token: str) -> int | None:
+    """Return the document id the token was minted for, or None if invalid."""
+    try:
+        payload = jwt.decode(token, settings.secret_key, algorithms=[ALGORITHM])
+    except JWTError:
+        return None
+    if payload.get("purpose") != FILE_TOKEN_PURPOSE or payload.get("sub") != "doc-file":
+        return None
+    try:
+        return int(payload["doc"])
+    except (KeyError, TypeError, ValueError):
+        return None

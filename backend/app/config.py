@@ -56,6 +56,10 @@ class Settings(BaseSettings):
     # Ingestion
     max_upload_mb: int = 25
 
+    # AI Product Identifier (vision). Uses the same GEMINI_API_KEY as chat.
+    vision_max_image_mb: int = 8
+    vision_target_edge: int = 1024
+
     # First-run seeding (creates demo users + SAMPLE documents when the DB is empty)
     seed_sample_data: bool = True
 

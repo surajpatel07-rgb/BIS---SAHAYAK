@@ -28,6 +28,7 @@ def _add_column(db, table: str, ddl: str, column: str) -> None:
 
 
 # Legacy free-form category values -> canonical registry keys.
+# Keys not listed here fall through to the registry's normalize_category.
 _LEGACY_MAP = {
     "cement": "everyday_products",
     "safety": "everyday_products",
@@ -35,10 +36,16 @@ _LEGACY_MAP = {
     "certification": "industry",
     "general": "general_bis",
     "food": "food",
+    "water": "water",
+    "packaging": "packaging",
+    "construction": "construction",
     "hallmarking": "hallmarking",
+    "gold_silver": "hallmarking",
     "electronics_electrical": "electronics_electrical",
     "electronics": "electronics_electrical",
     "everyday_products": "everyday_products",
+    "household": "everyday_products",
+    "consumer_products": "everyday_products",
     "industry": "industry",
     "general_bis": "general_bis",
 }
@@ -46,7 +53,13 @@ _LEGACY_MAP = {
 
 def _norm(raw: str | None) -> str:
     v = (raw or "").strip().lower().replace(" ", "_").replace("-", "_")
-    return _LEGACY_MAP.get(v, "general_bis")
+    if v in _LEGACY_MAP:
+        return _LEGACY_MAP[v]
+    # Anything else delegates to the registry (covers new canonical keys like
+    # water / packaging / construction automatically).
+    from app.knowledge.registry import normalize_category
+
+    return normalize_category(v)
 
 
 def _sync_registry_tables(engine: Engine) -> None:

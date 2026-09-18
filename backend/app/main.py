@@ -7,7 +7,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from starlette.responses import FileResponse, JSONResponse
 
-from app.api import auth, chat, documents, knowledge, misc, search
+from app.api import (
+    auth,
+    chat,
+    documents,
+    knowledge,
+    misc,
+    product_identification,
+    search,
+)
 from app.config import settings
 from app.logging_config import configure_logging, get_logger
 from app.database.base import Base, engine
@@ -78,6 +86,7 @@ app.include_router(chat.router)
 app.include_router(documents.router)
 app.include_router(search.router)
 app.include_router(knowledge.router)
+app.include_router(product_identification.router)
 app.include_router(misc.router)
 
 _STATIC_READY = STATIC_DIR.exists() and (STATIC_DIR / "index.html").exists()

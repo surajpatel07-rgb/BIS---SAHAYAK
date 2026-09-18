@@ -16,6 +16,9 @@ class CitationSchema(BaseModel):
     category: str
     year: int | None = None
     snippet: str
+    # Provenance (displayed on citation cards)
+    source_name: str = ""
+    source_type: str = "demo"
 
 
 class ChatRequest(BaseModel):

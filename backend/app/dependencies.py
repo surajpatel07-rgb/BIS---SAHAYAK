@@ -38,6 +38,27 @@ def get_current_user(
     return user
 
 
+def get_optional_user(
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
+    db: Session = Depends(get_db),
+) -> User | None:
+    """Like get_current_user, but returns None instead of raising 401.
+
+    Used by endpoints that accept multiple auth paths (e.g. the PDF file
+    endpoint also accepts a scoped query token).
+    """
+    if credentials is None:
+        return None
+    payload = decode_access_token(credentials.credentials)
+    if payload is None or "sub" not in payload:
+        return None
+    try:
+        user_id = int(payload["sub"])
+    except (TypeError, ValueError):
+        return None
+    return db.get(User, user_id)
+
+
 def require_admin(current_user: User = Depends(get_current_user)) -> User:
     if current_user.role != "admin":
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Admin privileges required")

@@ -105,4 +105,5 @@ def test_fallback_provider_still_refuses_unsupported_bis_questions():
         "Answer the question."
     )
     answer = FallbackLLMProvider().generate(prompt)
-    assert "could not find sufficient information" in answer.lower()
+    assert "couldn't find sufficient evidence" in answer.lower()
+    assert "Try searching the BIS Knowledge Base" in answer

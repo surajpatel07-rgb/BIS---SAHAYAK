@@ -15,6 +15,7 @@ import {
   CategoryProducts,
   ProductDetailPage,
 } from "./pages/ExploreProducts";
+import ProductIdentifierPage from "./pages/ProductIdentifier";
 
 function RequireAuth({ children }: { children: ReactNode }) {
   const { user } = useAuth();
@@ -91,6 +92,16 @@ export default function App() {
             <RequireAuth>
               <Layout>
                 <ProductDetailPage />
+              </Layout>
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/identify"
+          element={
+            <RequireAuth>
+              <Layout>
+                <ProductIdentifierPage />
               </Layout>
             </RequireAuth>
           }

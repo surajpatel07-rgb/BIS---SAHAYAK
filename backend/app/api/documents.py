@@ -12,19 +12,67 @@ from fastapi import (
     UploadFile,
     status,
 )
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from sqlalchemy.orm import Session
+from urllib.parse import quote as urllib_parse_quote
 
 from app.config import BASE_DIR, settings
 from app.database.base import get_db
-from app.dependencies import get_current_user, require_admin
+from app.dependencies import get_current_user, get_optional_user, require_admin
 from app.ingestion.service import IngestionError, generate_stored_name, ingest_document, validate_pdf
 from app.logging_config import get_logger
 from app.models import Document, DocumentChunk, User
 from app.schemas.documents import DocumentDetailOut, DocumentOut, StatusResponse
+from app.security import FILE_TOKEN_TTL_SECONDS, create_file_token, decode_file_token
 
 logger = get_logger("app.api.documents")
 router = APIRouter(prefix="/api/documents", tags=["documents"])
+
+
+def _pdf_content_disposition(filename: str) -> str:
+    """RFC 6266/5987-safe Content-Disposition for a PDF.
+
+    Document names contain non-latin-1 characters (em-dashes etc.), which crash
+    Starlette's header encoding when put straight into filename="...". Use an
+    ASCII fallback plus filename* for the real (UTF-8) name.
+    """
+    ascii_fallback = (
+        filename.encode("ascii", "ignore").decode("ascii").replace('"', "").strip()
+        or "document.pdf"
+    )
+    if not ascii_fallback.lower().endswith(".pdf"):
+        ascii_fallback += ".pdf"
+    quoted = urllib_parse_quote(filename, safe="")
+    return f"inline; filename=\"{ascii_fallback}\"; filename*=UTF-8''{quoted}"
+
+
+def _source_unavailable_page(title: str, detail: str, status_code: int) -> HTMLResponse:
+    """Friendly HTML error for the document file endpoint.
+
+    This endpoint is opened directly in browser tabs by citation links, so a
+    plain JSON error would render as a bare API page. Return a small, clearly
+    styled page instead (the SPA's own 401-redirect interceptor does not run
+    here — that only applies to in-app fetches).
+    """
+    return HTMLResponse(
+        content=f"""<!doctype html>
+<html><head><meta charset="utf-8"><title>Source unavailable — BIS Buddy</title>
+<style>
+  body {{ font-family: system-ui, sans-serif; background: #f8fafc; color: #334155;
+         display: flex; align-items: center; justify-content: center; min-height: 100vh; margin: 0; }}
+  .card {{ background: #fff; border: 1px solid #e2e8f0; border-radius: 16px;
+          padding: 2.5rem; max-width: 26rem; text-align: center; box-shadow: 0 1px 3px rgba(0,0,0,.08); }}
+  h1 {{ font-size: 1.15rem; margin: .75rem 0 .5rem; color: #0f172a; }}
+  p {{ font-size: .9rem; line-height: 1.5; margin: .25rem 0; }}
+  .icon {{ font-size: 2rem; }}
+</style></head>
+<body><div class="card"><div class="icon">&#128196;</div>
+<h1>Source unavailable</h1>
+<p><b>{title}</b></p><p>{detail}</p>
+<p style="color:#64748b">Return to BIS Buddy and try opening the citation again.</p>
+</div></body></html>""",
+        status_code=status_code,
+    )
 
 
 @router.post("/upload", response_model=DocumentDetailOut, status_code=status.HTTP_202_ACCEPTED)
@@ -135,28 +183,86 @@ def get_document(
 def get_document_file(
     document_id: int,
     page: int | None = None,
+    token: str | None = None,
     db: Session = Depends(get_db),
-    _user: User = Depends(get_current_user),
+    _user: User | None = Depends(get_optional_user),
 ):
-    """Serve the stored PDF (path-safe: id-based lookup, no user paths)."""
+    """Serve the stored PDF inline (Content-Type: application/pdf).
+
+    Authentication accepts EITHER:
+      - a Bearer session token (SPA fetches / iframes with header auth), or
+      - a short-lived `?token=` query token minted specifically for this
+        document id (browser tab navigation via <a href> cannot send headers).
+
+    This is what lets citation links open the real PDF in a new tab while the
+    rest of the API stays header-authenticated. Path-safe: id-based lookup,
+    resolved path must live inside the uploads directory.
+    """
+    token_doc_id = decode_file_token(token) if token else None
+    if token_doc_id is None and _user is None:
+        return _source_unavailable_page(
+            "Sign-in required",
+            "This source link has expired or is not authorised. Please open the "
+            "citation again from BIS Buddy while signed in.",
+            status.HTTP_401_UNAUTHORIZED,
+        )
+    if token_doc_id is not None and token_doc_id != document_id:
+        return _source_unavailable_page(
+            "Invalid source link",
+            "This link was issued for a different document and cannot be used here.",
+            status.HTTP_403_FORBIDDEN,
+        )
+
     document = db.get(Document, document_id)
     if not document or not document.file_path:
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "Document file not found")
+        return _source_unavailable_page(
+            "Document not found",
+            "The referenced source is not present in the knowledge base. It may "
+            "have been removed by an administrator.",
+            status.HTTP_404_NOT_FOUND,
+        )
     path = Path(document.file_path)
     if not path.is_absolute():
         path = BASE_DIR / path
     # Path traversal guard: resolved path must live inside uploads dir
     uploads_resolved = settings.uploads_path.resolve()
     if not path.resolve().is_relative_to(uploads_resolved):
-        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid file path")
+        return _source_unavailable_page(
+            "Invalid source link", "The document storage path could not be resolved.", 400
+        )
     if not path.exists():
-        raise HTTPException(status.HTTP_404_NOT_FOUND, "File missing on disk")
+        return _source_unavailable_page(
+            "File missing on server",
+            "The PDF file for this source is no longer available on the server. "
+            "Please ask an administrator to re-upload or re-index the document.",
+            status.HTTP_404_NOT_FOUND,
+        )
+    if not path.suffix.lower().endswith(".pdf"):
+        return _source_unavailable_page(
+            "Unsupported source", "The stored source is not a PDF document.", 415
+        )
     return FileResponse(
         path,
         media_type="application/pdf",
-        filename=document.name,
-        headers={"Content-Disposition": f'inline; filename="{document.name}"'},
+        headers={
+            "Content-Disposition": _pdf_content_disposition(document.name),
+            "X-Content-Type-Options": "nosniff",
+            "Cache-Control": "private, max-age=300",
+        },
     )
+
+
+@router.post("/{document_id}/file-token")
+def create_document_file_token(
+    document_id: int,
+    db: Session = Depends(get_db),
+    _user: User = Depends(get_current_user),
+):
+    """Mint a short-lived link token for one document (for <a href> navigation)."""
+    document = db.get(Document, document_id)
+    if not document:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Document not found")
+    return {"token": create_file_token(document_id), "expires_in": FILE_TOKEN_TTL_SECONDS}
 
 
 @router.delete("/{document_id}", response_model=StatusResponse)
